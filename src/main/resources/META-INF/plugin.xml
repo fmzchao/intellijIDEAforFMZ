@@ -1,0 +1,79 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.fmz.plugin</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>FMZ Code Assistant</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="support@fmz.com" url="https://www.fmz.com">fmz</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description>
+        <![CDATA[
+        <h2>FMZ Code Assistant</h2>
+
+        <p><strong>版本：</strong> 0.0.1</p>
+        <p><strong>开发者：</strong> Chao Zhang</p>
+        <p><strong>联系方式：</strong> <a href="mailto:coo@fmz.com">coo@fmz.com</a></p>
+        <p><strong>网址：</strong> <a href="http://www.fmz.com">http://www.fmz.com</a></p>
+
+        <h3>插件描述：</h3>
+        <p>FMZ Code Assistant 是一款用于 IntelliJ IDEA 的插件，专为 JavaScript 和 Python 开发者设计。此插件提供了强大的自动补全功能和文件同步功能，使开发工作更加高效和便捷。</p>
+
+        <h3>功能特色：</h3>
+        <ul>
+            <li><strong>代码自动补全：</strong>
+                <ul>
+                    <li>为 JavaScript 和 Python 文件提供智能的代码自动补全功能，帮助开发者快速编写代码，减少输入错误。</li>
+                    <li>支持一系列常用的函数和方法，自动补全列表涵盖了多种编程需求。</li>
+                </ul>
+            </li>
+            <li><strong>文件同步：</strong>
+                <ul>
+                    <li>自动检测并同步本地文件至 FMZ 服务器，支持 .js 和 .py 文件。</li>
+                    <li>当文件中包含特定的 <code>fmz@token</code> 标记时，插件会自动上传文件内容到服务器。</li>
+                    <li>同步成功或失败时，会在右下角弹出通知提示，用户可以直观地了解文件同步状态。</li>
+                </ul>
+            </li>
+            <li><strong>通知系统：</strong>
+                <ul>
+                    <li>使用 IntelliJ IDEA 的通知系统，在文件同步成功或失败时弹出漂浮提示，提示内容直观易懂。</li>
+                    <li>通知会在显示 5 秒后自动消失，不干扰用户的正常开发工作。</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>使用方法：</h3>
+        <ol>
+            <li>在 IntelliJ IDEA 中安装并启用 FMZ Integration 插件。</li>
+            <li>打开一个 JavaScript 或 Python 文件，输入代码时即可享受自动补全功能。</li>
+            <li>在文件中添加 <code>fmz@token</code> 标记，保存文件时插件会自动检测并同步文件至 FMZ 服务器。</li>
+        </ol>
+
+        <p>通过 FMZ Code Assistant 插件，您可以提升代码编写效率，同时确保文件在本地和服务器之间保持同步。立即安装并体验吧！</p>
+        ]]>
+    </description>
+
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <completion.contributor language="any" implementationClass="com.fmz.plugin.MyCompletionContributor"/>
+        <documentationProvider implementation="com.fmz.plugin.MyDocumentationProvider"/>
+
+
+
+        <postStartupActivity implementation="com.fmz.plugin.FileSyncListener"/>
+        <notificationGroup id="FMZ Sync" displayType="BALLOON" />
+    </extensions>
+</idea-plugin>
