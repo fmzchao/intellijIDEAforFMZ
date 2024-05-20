@@ -54,22 +54,22 @@ class FileSyncService {
                 val response = conn.inputStream.bufferedReader().use(BufferedReader::readText)
                 showNotification("FMZ Sync", "File [$fileName] synced successfully", NotificationType.INFORMATION)
             } catch (e: Exception) {
-                showNotification("FMZ Sync Error", "Error syncing file [$fileName]: ${e.message}", NotificationType.ERROR)
+                showNotification("FMZ Sync Error", "Error syncing file [$fileName]: ${e.message}", NotificationType.ERROR,10000)
             }
         }
     }
 
 
-    private fun showNotification(title: String, content: String, type: NotificationType) {
+    private fun showNotification(title: String, content: String, type: NotificationType, duration: Long = 1500) {
         val notification = Notification("FMZ Sync", title, content, type)
         Notifications.Bus.notify(notification)
 
-        // Close the notification after 5 seconds
+        // Close the notification after the specified duration
         Timer().schedule(object : TimerTask() {
             override fun run() {
                 notification.expire()
             }
-        }, 1500)
+        }, duration)
     }
 }
 

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.fmz"
-version = "0.0.1"
+version = "0.0.4"
 
 repositories {
     mavenCentral()
@@ -15,9 +15,10 @@ repositories {
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     version.set("2023.2.5")
-    type.set("IC") // Target IDE Platform
+    type.set("IU") // javascript
 
-    plugins.set(listOf(/* Plugin Dependencies */))
+    plugins.set(listOf("JavaScript"))
+
 }
 
 tasks {

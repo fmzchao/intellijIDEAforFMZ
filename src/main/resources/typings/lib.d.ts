@@ -3,7 +3,6 @@ interface IConsole {
     log(...args: any[]): void;
     error(...args: any[]): void;
 }
-declare const console: IConsole;
 declare const $: any;
 declare var BigDecimal: any;
 declare var BigFloat: any;

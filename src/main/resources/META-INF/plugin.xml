@@ -8,7 +8,7 @@
     <name>FMZ Code Assistant</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="support@fmz.com" url="https://www.fmz.com">fmz</vendor>
+    <vendor email="support@fmz.com" url="https://www.fmz.com">FMZ Quant</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -17,7 +17,6 @@
         <![CDATA[
         <h2>FMZ Code Assistant</h2>
 
-        <p><strong>版本：</strong> 0.0.1</p>
         <p><strong>开发者：</strong> Chao Zhang</p>
         <p><strong>联系方式：</strong> <a href="mailto:coo@fmz.com">coo@fmz.com</a></p>
         <p><strong>网址：</strong> <a href="http://www.fmz.com">http://www.fmz.com</a></p>
@@ -43,14 +42,14 @@
             <li><strong>通知系统：</strong>
                 <ul>
                     <li>使用 IntelliJ IDEA 的通知系统，在文件同步成功或失败时弹出漂浮提示，提示内容直观易懂。</li>
-                    <li>通知会在显示 5 秒后自动消失，不干扰用户的正常开发工作。</li>
+                    <li>通知会在显示 2 秒后自动消失，不干扰用户的正常开发工作。</li>
                 </ul>
             </li>
         </ul>
 
         <h3>使用方法：</h3>
         <ol>
-            <li>在 IntelliJ IDEA 中安装并启用 FMZ Integration 插件。</li>
+            <li>在 IntelliJ IDEA 中安装并启用 FMZ Code Assistant 插件。</li>
             <li>打开一个 JavaScript 或 Python 文件，输入代码时即可享受自动补全功能。</li>
             <li>在文件中添加 <code>fmz@token</code> 标记，保存文件时插件会自动检测并同步文件至 FMZ 服务器。</li>
         </ol>
@@ -63,17 +62,17 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
-
+    <depends>com.intellij.modules.lang</depends>
+    <depends>JavaScript</depends>
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
 
     <extensions defaultExtensionNs="com.intellij">
         <completion.contributor language="any" implementationClass="com.fmz.plugin.MyCompletionContributor"/>
-        <documentationProvider implementation="com.fmz.plugin.MyDocumentationProvider"/>
-
-
-
+<!--        <documentationProvider implementation="com.fmz.plugin.MyDocumentationProvider"/>-->
         <postStartupActivity implementation="com.fmz.plugin.FileSyncListener"/>
         <notificationGroup id="FMZ Sync" displayType="BALLOON" />
+        <postStartupActivity implementation="com.fmz.plugin.TypeScriptDefinitionProvider"/>
     </extensions>
+
 </idea-plugin>

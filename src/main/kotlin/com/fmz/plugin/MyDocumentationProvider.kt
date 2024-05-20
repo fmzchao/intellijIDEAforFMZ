@@ -4,6 +4,7 @@ import com.intellij.lang.documentation.AbstractDocumentationProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 
+@Suppress("UNRESOLVED_REFERENCE")
 class MyDocumentationProvider : AbstractDocumentationProvider() {
 
     override fun generateDoc(element: PsiElement?, originalElement: PsiElement?): String? {
