@@ -61,7 +61,7 @@ class FileSyncService {
 
 
     private fun showNotification(title: String, content: String, type: NotificationType, duration: Long = 1500) {
-        val notification = Notification("FMZ Sync", title, content, type)
+        val notification = Notification("FMZSync", title, content, type)
         Notifications.Bus.notify(notification)
 
         // Close the notification after the specified duration
