@@ -4,7 +4,6 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
@@ -12,20 +11,24 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.messages.MessageBusConnection
-import java.io.BufferedReader
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.net.URLEncoder
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.thread
+import java.io.BufferedReader
 
 @Service
-class FileSyncService {
+class FileSyncService(val project: Project) {
     fun syncFile(fileName: String, content: String, token: String) {
         thread {
+
             try {
-                val url = URL("https://www.fmz.${if (token.startsWith('n')) "cn" else "com"}/rsync")
+                // 使用 URI 构造器，然后转换为 URL
+                val uri = URI("https", "www.fmz.${if (token.startsWith('n')) "cn" else "com"}", "/rsync", null)
+                val url = uri.toURL()
+
                 val params = mapOf(
                     "token" to token,
                     "method" to "push",
@@ -33,8 +36,9 @@ class FileSyncService {
                     "version" to "0.0.2",
                     "client" to "idea"
                 )
-                val postData = params.map { "${URLEncoder.encode(it.key, "UTF-8")}=${URLEncoder.encode(it.value, "UTF-8")}" }
-                    .joinToString("&")
+                val postData = params.map {
+                    "${URLEncoder.encode(it.key, "UTF-8")}=${URLEncoder.encode(it.value, "UTF-8")}"
+                }.joinToString("&")
 
                 val conn = url.openConnection() as HttpURLConnection
                 conn.doOutput = true
@@ -42,23 +46,30 @@ class FileSyncService {
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
                 conn.setRequestProperty("Content-Length", postData.length.toString())
 
-                val connStream = conn.outputStream
-                try {
-                    connStream.write(postData.toByteArray(Charsets.UTF_8))
-                    connStream.flush()  // 确保数据完全写入
-                } finally {
-                    connStream.close()  // 关闭流以释放资源
+                conn.outputStream.use { outStream ->
+                    outStream.write(postData.toByteArray(Charsets.UTF_8))
+                    outStream.flush()  // 确保数据完全写入
                 }
-                conn.connect()
 
+                conn.connect()
                 val response = conn.inputStream.bufferedReader().use(BufferedReader::readText)
-                showNotification("FMZ Sync", "File [$fileName] synced successfully", NotificationType.INFORMATION)
+                if (response.contains("\"code\":0")) {
+                    showNotification("FMZ Sync", "File [$fileName] synced successfully", NotificationType.INFORMATION)
+                } else {
+                    showNotification("FMZ Sync Error", "Error syncing file [$fileName] fail: $response", NotificationType.ERROR, 10000)
+                }
             } catch (e: Exception) {
-                showNotification("FMZ Sync Error", "Error syncing file [$fileName]: ${e.message}", NotificationType.ERROR,10000)
+                showNotification("FMZ Sync Error", "Exception occurred: ${e.message}", NotificationType.ERROR)
+            } catch (e: Exception) {
+                showNotification(
+                    "FMZ Sync Error",
+                    "Error syncing file [$fileName]: ${e.message}",
+                    NotificationType.ERROR,
+                    10000
+                )
             }
         }
     }
-
 
     private fun showNotification(title: String, content: String, type: NotificationType, duration: Long = 1500) {
         val notification = Notification("FMZSync", title, content, type)
@@ -89,7 +100,8 @@ class FileSyncListener : ProjectActivity {
                         val content = document.text
                         val filteredContent = filterContent(content)
                         val token = extractToken(content) ?: return@forEach
-                        ServiceManager.getService(FileSyncService::class.java).syncFile(fileName, filteredContent, token)
+                        val service = project.getService(FileSyncService::class.java)
+                        service.syncFile(fileName, filteredContent, token)
                     }
                 }
             }
@@ -100,8 +112,7 @@ class FileSyncListener : ProjectActivity {
 
             private fun extractToken(content: String): String? {
                 val regex = "fmz@([a-zA-Z0-9]{32})".toRegex()
-                val matchResult = regex.find(content)
-                return matchResult?.groups?.get(1)?.value
+                return regex.find(content)?.groups?.get(1)?.value
             }
         })
     }

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.fmz"
-version = "0.0.6"
+version = "0.0.7"
 
 repositories {
     mavenCentral()
@@ -15,9 +15,9 @@ repositories {
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     version.set("2023.2.5")
-    type.set("IU") // javascript
+    type.set("IU") // Target IDE Platform
 
-    plugins.set(listOf("JavaScript"))
+    plugins.set(listOf(/* Plugin Dependencies */))
 
 }
 
@@ -45,4 +45,8 @@ tasks {
     publishPlugin {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
+    buildSearchableOptions {
+        enabled = false
+    }
+
 }

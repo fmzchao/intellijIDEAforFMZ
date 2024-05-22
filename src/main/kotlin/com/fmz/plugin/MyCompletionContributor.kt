@@ -1,4 +1,5 @@
 package com.fmz.plugin
+
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.patterns.PlatformPatterns
