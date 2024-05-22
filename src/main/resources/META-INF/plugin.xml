@@ -67,8 +67,9 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.fmz.plugin.FileSyncListener"/>
-        <notificationGroup id="FMZSync" displayType="BALLOON"/>
         <completion.contributor language="any" implementationClass="com.fmz.plugin.MyCompletionContributor"/>
-
+        <notificationGroup id="FMZSync" displayType="BALLOON"/>
+        <psi.referenceContributor language="" implementation="com.fmz.plugin.MyReferenceContributor"/>
+        <documentationProvider implementation="com.fmz.plugin.MyDocumentationProvider"/>
     </extensions>
 </idea-plugin>
