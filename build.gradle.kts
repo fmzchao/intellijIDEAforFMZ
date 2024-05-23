@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.fmz"
-version = "0.0.7"
+version = "0.0.8"
 
 repositories {
     mavenCentral()
@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     // 依赖应放在这里
-    implementation("org.json:json:20210307")
+    implementation("org.json:json:20231013")
 }
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
@@ -36,7 +36,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("232")
+        sinceBuild.set("221")
         untilBuild.set("242.*")
     }
 
