@@ -16,57 +16,47 @@ import java.net.URI
 import java.net.URLEncoder
 import java.util.Timer
 import java.util.TimerTask
-import kotlin.concurrent.thread
-import java.io.BufferedReader
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-@Service
-class FileSyncService(val project: Project) {
+@Service(Service.Level.PROJECT)
+class FileSyncService(val project: Project) : CoroutineScope by CoroutineScope(Dispatchers.IO) {
     fun syncFile(fileName: String, content: String, token: String) {
-        thread {
+        launch {
+            val uri = URI("https", "www.fmz.${if (token.startsWith('n')) "cn" else "com"}", "/rsync", null)
+            val url = uri.toURL()
+            val params = mapOf(
+                "token" to token,
+                "method" to "push",
+                "content" to content,
+                "version" to "0.0.2",
+                "client" to "idea"
+            )
+            val postData = params.map {
+                "${URLEncoder.encode(it.key, "UTF-8")}=${URLEncoder.encode(it.value, "UTF-8")}"
+            }.joinToString("&")
 
-            try {
-                // 使用 URI 构造器，然后转换为 URL
-                val uri = URI("https", "www.fmz.${if (token.startsWith('n')) "cn" else "com"}", "/rsync", null)
-                val url = uri.toURL()
-
-                val params = mapOf(
-                    "token" to token,
-                    "method" to "push",
-                    "content" to content,
-                    "version" to "0.0.2",
-                    "client" to "idea"
-                )
-                val postData = params.map {
-                    "${URLEncoder.encode(it.key, "UTF-8")}=${URLEncoder.encode(it.value, "UTF-8")}"
-                }.joinToString("&")
-
-                val conn = url.openConnection() as HttpURLConnection
-                conn.doOutput = true
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-                conn.setRequestProperty("Content-Length", postData.length.toString())
-
-                conn.outputStream.use { outStream ->
+            (url.openConnection() as HttpURLConnection).apply {
+                doOutput = true
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+                setRequestProperty("Content-Length", postData.length.toString())
+                outputStream.use { outStream ->
                     outStream.write(postData.toByteArray(Charsets.UTF_8))
-                    outStream.flush()  // 确保数据完全写入
                 }
-
-                conn.connect()
-                val response = conn.inputStream.bufferedReader().use(BufferedReader::readText)
-                if (response.contains("\"code\":0")) {
-                    showNotification("FMZ Sync", "File [$fileName] synced successfully", NotificationType.INFORMATION)
-                } else {
-                    showNotification("FMZ Sync Error", "Error syncing file [$fileName] fail: $response", NotificationType.ERROR, 10000)
+                try {
+                    val response = inputStream.bufferedReader().use { it.readText() }
+                    if (response.contains("\"code\":0")) {
+                        showNotification("FMZ Sync", "File [$fileName] synced successfully", NotificationType.INFORMATION)
+                    } else {
+                        showNotification("FMZ Sync Error", "Error syncing file [$fileName]: $response", NotificationType.ERROR)
+                    }
+                } catch (e: Exception) {
+                    showNotification("FMZ Sync Error", "Exception occurred: ${e.message}", NotificationType.ERROR)
+                } finally {
+                    disconnect()
                 }
-            } catch (e: Exception) {
-                showNotification("FMZ Sync Error", "Exception occurred: ${e.message}", NotificationType.ERROR)
-            } catch (e: Exception) {
-                showNotification(
-                    "FMZ Sync Error",
-                    "Error syncing file [$fileName]: ${e.message}",
-                    NotificationType.ERROR,
-                    10000
-                )
             }
         }
     }
@@ -74,8 +64,6 @@ class FileSyncService(val project: Project) {
     private fun showNotification(title: String, content: String, type: NotificationType, duration: Long = 1500) {
         val notification = Notification("FMZSync", title, content, type)
         Notifications.Bus.notify(notification)
-
-        // Close the notification after the specified duration
         Timer().schedule(object : TimerTask() {
             override fun run() {
                 notification.expire()
@@ -83,7 +71,6 @@ class FileSyncService(val project: Project) {
         }, duration)
     }
 }
-
 class FileSyncListener : ProjectActivity {
     override suspend fun execute(project: Project) {
         val connection: MessageBusConnection = project.messageBus.connect()
