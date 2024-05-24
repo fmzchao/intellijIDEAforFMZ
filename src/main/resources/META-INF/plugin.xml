@@ -15,49 +15,35 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description>
         <![CDATA[
-        <h2>FMZ Code Assistant</h2>
+    <p>With the FMZ Code Assistant plugin, you can enhance your coding efficiency and ensure files are synchronized between your local environment and the server.</p>
+    <h2>FMZ Code Assistant</h2>
+    <p><strong>Developer:</strong> Chao Zhang</p>
+    <p><strong>Contact:</strong> <a href="mailto:support@fmz.com">support@fmz.com</a></p>
+    <p><strong>Website:</strong> <a href="https://www.fmz.com">https://www.fmz.com</a></p>
 
-        <p><strong>Developer:</strong> Chao Zhang</p>
-        <p><strong>Contact:</strong> <a href="mailto:support@fmz.com">support@fmz.com</a></p>
-        <p><strong>Website:</strong> <a href="https://www.fmz.com">https://www.fmz.com</a></p>
-
-        <h3>Plugin Description:</h3>
-        <p>FMZ Code Assistant is a plugin for IntelliJ IDEA, designed specifically for JavaScript and Python developers. This plugin offers powerful autocomplete and file synchronization features, making development work more efficient and convenient.</p>
-
-        <h3>Features:</h3>
-        <ul>
-            <li><strong>Code Autocomplete:</strong>
-                <ul>
-                    <li>Provides intelligent code autocomplete for JavaScript and Python files, helping developers write code quickly and reduce input errors.</li>
-                    <li>Supports a range of common functions and methods, with an autocomplete list that covers various programming needs.</li>
-                </ul>
-            </li>
-            <li><strong>File Synchronization:</strong>
-                <ul>
-                    <li>Automatically detects and synchronizes local files to the FMZ server, supporting .js and .py files.</li>
-                    <li>When files contain the specific <code>fmz@token</code> tag, the plugin automatically uploads the file content to the server.</li>
-                    <li>Success or failure notifications pop up in the bottom right corner, allowing users to visually understand the file synchronization status.</li>
-                </ul>
-            </li>
-            <li><strong>Notification System:</strong>
-                <ul>
-                    <li>Uses the IntelliJ IDEA notification system to display floating alerts when file synchronization is successful or fails, with clear and understandable content.</li>
-                    <li>Notifications disappear after displaying for 2 seconds, not disturbing the user's normal development work.</li>
-                </ul>
-            </li>
-        </ul>
-
-        <h3>How to Use:</h3>
-        <ol>
-            <li>Install and enable the FMZ Code Assistant plugin in IntelliJ IDEA.</li>
-            <li>Open a JavaScript or Python file, and enjoy the autocomplete feature as you type code.</li>
-            <li>Add the <code>fmz@token</code> tag in your file, and the plugin will automatically detect and synchronize the file to the FMZ server when you save it.</li>
-        </ol>
-
-        <p>With the FMZ Code Assistant plugin, you can enhance your coding efficiency and ensure files are synchronized between your local environment and the server. Install and experience it now!</p>
-
-        ]]>
+    <h3>Features:</h3>
+    <ul>
+        <li><strong>Code Autocomplete:</strong> Intelligent support for JavaScript and Python, boosting coding speed and accuracy across IDEs.</li>
+        <li><strong>File Synchronization:</strong> Automatically sync your .js and .py files with the server when saving files marked with <code>fmz@token</code>.</li>
+        <li><strong>Notifications:</strong> Receive immediate feedback on the status of your file uploads through integrated IDE notifications.</li>
+    </ul>
+    <p>Get FMZ Code Assistant now to enhance your coding efficiency and ensure smooth file management across different development environments!</p>
+    ]]>
     </description>
+    <change-notes><![CDATA[
+    <h2>New Features</h2>
+    <ul>
+      <li>Automatic matching of function descriptions with both Chinese and English documentation</li>
+      <li>Added support for more functions</li>
+    </ul>
+    <h2>Bug Fixes</h2>
+    <ul>
+      <li>Fixed potential timeout issues during file upload</li>
+      <li>Fixed incorrect IDE prompts for certain functions</li>
+    </ul>
+        ]]>
+    </change-notes>
+
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
