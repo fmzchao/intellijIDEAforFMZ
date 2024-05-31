@@ -38,7 +38,7 @@ class MyDocumentationProvider : AbstractDocumentationProvider() {
         if (parent != null) {
 //            println("parent = $parent, parent.txt = ${parent.text} ,callExpression.firstChild = ${parent.firstChild.text}")
             val elementText = parent.firstChild.text
-            if (elementText.matches(Regex("exchanges\\[\\d+]\\.\\w+"))) {
+            if (elementText.matches(Regex("exchanges\\[\\w+]\\.\\w+"))) {
                 val functionName = elementText.substringAfter("exchanges[").substringBefore("].")
                 val exchangeVariable = "exchange"
                 val newExpression = elementText.replace("exchanges[$functionName].", "$exchangeVariable.")

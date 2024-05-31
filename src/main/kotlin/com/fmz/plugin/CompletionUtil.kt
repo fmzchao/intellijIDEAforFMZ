@@ -42,6 +42,7 @@ object CompletionUtil {
             "exchange.SetMarginLevel",
             "exchange.SetDirection",
             "exchange.GetPosition",
+            "exchange.Log",
             // TA related functions
             "TA.MA",
             "TA.SMA",
@@ -255,6 +256,11 @@ object CompletionUtil {
             //web3
             "BigDecimal",
             "BigFloat",
+            //main
+            "main",
+            "onerror",
+            "onexit",
+            "init"
         )
     }
 }

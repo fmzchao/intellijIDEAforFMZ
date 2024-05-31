@@ -31,18 +31,17 @@
     ]]>
     </description>
     <change-notes><![CDATA[
-    <h2>New Features</h2>
-    <ul>
-      <li>Automatic matching of function descriptions with both Chinese and English documentation</li>
-      <li>Added support for more functions</li>
-    </ul>
-    <h2>Bug Fixes</h2>
-    <ul>
-      <li>Fixed potential timeout issues during file upload</li>
-      <li>Fixed incorrect IDE prompts for certain functions</li>
-    </ul>
-        ]]>
-    </change-notes>
+<h2>New Features</h2>
+<ul>
+ <li>Added support for more functions, expanding the function library</li>
+ <li>Optimized the function description matching algorithm, improving matching accuracy and efficiency</li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul>
+ <li>Fixed the issue where exchanges could not be correctly matched, now able to accurately identify and process data from various exchanges</li>
+ <li>Fixed program crashes that occurred in certain edge cases, enhancing program stability</li>
+</ul>
+]]></change-notes>
 
 
     <!-- Product and plugin compatibility requirements.
