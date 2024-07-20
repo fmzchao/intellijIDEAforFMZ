@@ -18,6 +18,50 @@ FMZ Code Assistant is a versatile plugin designed to enhance your coding efficie
 - **Sync Files:** To sync files, add the `fmz@token` tag in your file. Save the file to trigger synchronization.
 - **Notifications:** Notifications appear automatically to confirm the status of your uploads.
 
+## Building from Source
+
+If you want to build the plugin from source, follow these steps:
+
+1. **Prerequisites:**
+    - Make sure you have JDK 17 or later installed.
+    - Install IntelliJ IDEA (Community or Ultimate edition).
+
+2. **Clone the Repository:**
+   ```
+   git clone https://github.com/your-repo/fmz-code-assistant.git
+   cd fmz-code-assistant
+   ```
+
+3. **Build the Plugin:**
+    - Open a terminal in the project root directory.
+    - Run the following command:
+      ```
+      ./gradlew build
+      ```
+
+4. **Locate the Built Plugin:**
+    - After a successful build, you can find the plugin ZIP file in:
+      ```
+      build/distributions/
+      ```
+
+5. **Install the Plugin:**
+    - In IntelliJ IDEA, go to Settings/Preferences -> Plugins -> Install Plugin from Disk.
+    - Select the ZIP file from the `build/distributions/` directory.
+    - Restart the IDE to activate the plugin.
+
+## Development Setup
+
+To set up the development environment:
+
+1. Open the project in IntelliJ IDEA.
+2. Make sure the Gradle plugin is enabled.
+3. Sync the Gradle project to download all dependencies.
+4. To run the plugin in a development instance, use the Gradle task:
+   ```
+   ./gradlew runIde
+   ```
+
 ## Support
 For support queries, contact us at [support@fmz.com](mailto:support@fmz.com).
 
