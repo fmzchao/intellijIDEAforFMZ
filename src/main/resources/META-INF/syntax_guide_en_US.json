@@ -404,12 +404,12 @@
                 "type": "number",
                 "desc": [
                     {
-                        "value": "FUTURES_OP_GET_POSITION is a constant associated with the {@fun exchange.GetPosition} function. It is used to identify the error message reported when the ```exchange.GetPosition()``` function is called incorrectly: ```Futures_OP 3```."
+                        "value": "FUTURES_OP_GET_POSITION is a constant associated with the {@fun exchange.GetPositions} function. It is used to identify the error message reported when the ```exchange.GetPositions()``` function is called incorrectly: ```Futures_OP 3```."
                     },
                     "The value of FUTURES_OP_GET_POSITION is 3."
                 ],
                 "seeAlso": [
-                    "{@fun exchange.GetPosition}, {@var FUTURES_OP_SET_MARGIN}, {@var FUTURES_OP_SET_DIRECTION}, {@var FUTURES_OP_SET_CONTRACT_TYPE}, {@var EXCHANGE_OP_IO_CONTROL}"
+                    "{@fun exchange.GetPositions}, {@var FUTURES_OP_SET_MARGIN}, {@var FUTURES_OP_SET_DIRECTION}, {@var FUTURES_OP_SET_CONTRACT_TYPE}, {@var EXCHANGE_OP_IO_CONTROL}"
                 ]
             },
             "EXCHANGE_OP_IO_CONTROL": {
@@ -492,7 +492,7 @@
                         "name": "Symbol",
                         "type": "string",
                         "info": {
-                            "value": "The ```Symbol``` field is the trading variety code defined by the FMZ platform.\n- For the spot exchange object, the format of the ```Symbol``` field value (as an example) is: ```BTC_USDT```, indicating the BTC_USDT spot trading pair.\n- For the futures exchange object, the format of the ```Symbol``` field value (as an example) is ```BTC_USDT.swap```, which represents the USDT propriety perpetual contract for BTC.\n"
+                            "value": "The ```Symbol``` field is the trading variety code defined by the FMZ platform.\n- For the spot exchange object, the format of the ```Symbol``` field value (as an example) is: ```BTC_USDT```, indicating the BTC_USDT spot trading pair.\n- For the futures exchange object, the format of the ```Symbol``` field value (as an example) is ```BTC_USDT.swap```, which represents the USDT propriety perpetual contract for BTC.\n- For futures exchange objects, the format of the ```Symbol``` field value is (for example): ```BTC_USDT.BTC-240108-40000-C```, which represents a call option contract of BTC in USDT with an exercise date of January 8, 2024 and an exercise price of 40,000.\n"
                         }
                     },
                     {
@@ -550,11 +550,21 @@
                         "info": {
                             "value": "Millisecond-level timestamp."
                         }
+                    },
+                    {
+                        "name": "OpenInterest",
+                        "type": "number",
+                        "info": {
+                            "value": "Positions, most exchange interfaces do not provide this data and the value is 0 when this data is not supported."
+                        }
                     }
                 ],
                 "remarks": [
                     {
                         "value": "The exchange.GetTicker() function returns a Ticker structure."
+                    },
+                    {
+                        "value": "For option contracts, the ```exchange.GetTicker()``` function call is prone to errors. Because option contract market liquidity is usually poor, there are often no pending orders for the first buy or first sell. At this time, when the FMZ bottom layer detects that the ```Ticker``` structure field ```Buy``` or ```Sell``` is 0, an error prompt will be triggered."
                     }
                 ],
                 "seeAlso": [
@@ -634,10 +644,17 @@
                         }
                     },
                     {
+                        "name": "Symbol",
+                        "type": "string",
+                        "info": {
+                            "value": "The ```Symbol``` field is the trading product code defined by the FMZ platform, and its format is consistent with the ```Symbol``` field of the {@struct Ticker} structure.\n- For spot exchange objects, the format of the ```Symbol``` field value is (for example): ```BTC_USDT```, indicating the BTC_USDT spot trading pair.\n- For futures exchange objects, the format of the ```Symbol``` field value is (for example): ```BTC_USDT.swap```, which represents the USDT-standard perpetual contract of BTC.\n"
+                        }
+                    },
+                    {
                         "name": "Id",
                         "type": "string",
                         "info": {
-                            "value": "Order Id."
+                            "value": "Order Id, this attribute consists of the exchange product code and the exchange original order ID, separated by English commas. For example, the attribute ```Id``` format of the spot trading pair ```ETH_USDT``` order of OKX exchange is: ```ETH-USDT,1547130415509278720```."
                         }
                     },
                     {
@@ -804,6 +821,20 @@
                         "info": {
                             "value": "The value of the frozen assets when the order is not filled."
                         }
+                    },
+                    {
+                        "name": "Equity",
+                        "type": "number",
+                        "info": {
+                            "value": "Only futures exchange objects support this field. The ```Equity``` field is the total equity of the futures account margin under the current contract setting. If the exchange interface does not provide relevant data, this field is 0.\n"
+                        }
+                    },
+                    {
+                        "name": "UPnL",
+                        "type": "number",
+                        "info": {
+                            "value": "This field is only supported by futures exchange objects. The ```UPnL``` field is the sum of the **unrealized profit and loss** of all positions opened by the futures account margin under the current contract settings.\n"
+                        }
                     }
                 ],
                 "remarks": [
@@ -857,6 +888,13 @@
                         "type": "object",
                         "info": {
                             "value": "The original data returned by the exchange interface, no such attribute is available for backtesting."
+                        }
+                    },
+                    {
+                        "name": "Symbol",
+                        "type": "string",
+                        "info": {
+                            "value": "The ```Symbol``` field is the trading product code defined by the FMZ platform, and its format is consistent with the ```Symbol``` field of the {@struct Ticker} structure.\n- For spot exchange objects, the format of the ```Symbol``` field value is (for example): ```BTC_USDT```, indicating the BTC_USDT spot trading pair.\n- For futures exchange objects, the format of the ```Symbol``` field value is (for example): ```BTC_USDT.swap```, which represents the USDT-standard perpetual contract of BTC.\n"
                         }
                     },
                     {
@@ -918,14 +956,14 @@
                 ],
                 "remarks": [
                     {
-                        "value": "The exchange.GetPosition() function returns an array of Positions or an empty array."
+                        "value": "The exchange.GetPositions() function returns an array of Positions or an empty array."
                     },
                     {
-                        "value": "For cryptocurrency futures, it is important to note that the Position structure array returned by the exchange.GetPosition() function. For the FrozenAmount, Profit, and Margin attributes in the position data structure, as the data provided by the exchange is not uniform, the GetPosition() interface, the definition of the data returned by the exchange object may be different. For example, some exchanges have no position freeze data in the position data, so the FrozenAmount is 0. If you need to calculate certain data, you can use the original data in the Info attribute to calculate and analysis."
+                        "value": "For cryptocurrency futures, it is important to note that the Position structure array returned by the exchange.GetPositions() function. For the FrozenAmount, Profit, and Margin attributes in the position data structure, as the data provided by the exchange is not uniform, the GetPositions() interface, the definition of the data returned by the exchange object may be different. For example, some exchanges have no position freeze data in the position data, so the FrozenAmount is 0. If you need to calculate certain data, you can use the original data in the Info attribute to calculate and analysis."
                     }
                 ],
                 "seeAlso": [
-                    "{@fun exchange.GetPosition}"
+                    "{@fun exchange.GetPositions}"
                 ]
             },
             "Market": {
@@ -935,7 +973,7 @@
                         "name": "Symbol",
                         "type": "string",
                         "info": {
-                            "value": "Taking values such as ```\"btcusdt\"```, the ```Symbol``` field records the original name of the traded variety on the exchange."
+                            "value": "Taking values such as ```\"btcusdt\"```, the ```Symbol``` field records the original name of the traded variety on the exchange. Note that the format and definition of this attribute are different from the ```Symbol``` field of the {@struct Ticker} structure."
                         }
                     },
                     {
@@ -1411,7 +1449,7 @@
                 ],
                 "remarks": [
                     {
-                        "value": "Error logs matched by this regular expression will not be uploaded to the logging system, and can be called multiple times to set multiple filter conditions. The filtered logs are no longer written to the database file corresponding to the live trading Id in the docker directory to prevent frequent error reporting from bloating the database file."
+                        "value": "Error logs matched by this regular expression will not be uploaded to the log system. You can call it multiple times (no limit on the number of times) to set multiple filter conditions. Regular expressions set multiple times will be accumulated and take effect at the same time. You can set an empty string to reset the regular expression used to filter error logs: ```SetErrorFilter(\"\")```. The filtered logs are no longer written to the database file corresponding to the live trading Id in the docker directory to prevent frequent error reporting from bloating the database file."
                     }
                 ],
                 "examples": [
@@ -1664,7 +1702,10 @@
                         "value": "The ```Dial()``` function is only supported for live trading."
                     },
                     {
-                        "value": "When connecting to a database using the Dial function, the connection string is written with reference to the go language driver project for each database.\n\n| Databases supported | Driving projects |\n| - | - |\n|sqlite3|github.com/mattn/go-sqlite3|\n|mysql|github.com/go-sql-driver/mysql|\n|postgres|github.com/lib/pq|\n|clickhouse|github.com/ClickHouse/clickhouse-go|\n"
+                        "value": "When connecting to a database using the Dial function, the connection string is written with reference to the go language driver project for each database.\n\n| Databases supported | Driving projects | Connection string | Remarks |\n| - | - | - | - |\n| sqlite3 | github.com/mattn/go-sqlite3 | sqlite3://file:test.db?cache=shared&mode=memory | The ```sqlite3://``` prefix indicates that a sqlite3 database is being used, example call: ```Dial(\"sqlite3://test1.db\") ``` |\n| mysql | github.com/go-sql-driver/mysql | mysql://username:yourpassword@tcp(localhost:3306)/yourdatabase?charset=utf8mb4 | -- |\n| postgres | github.com/lib/pq | postgres://user=postgres dbname=yourdatabase sslmode=disable password=yourpassword host=localhost port=5432 | -- |\n| clickhouse | github.com/ClickHouse/clickhouse-go | clickhouse://tcp://host:9000?username=username&password=yourpassword&database=youdatabase | -- |\n"
+                    },
+                    {
+                        "value": "Please note that when the ```payload``` content set in the ```address``` parameter contains characters ```=``` or other special characters, it may affect the parsing of the ```address``` parameter of the ```Dial``` function, such as the following example.\n\nbackPack Exchange websocket private interface call example:\n```js\nvar client = null\n\nfunction main() {\n    // Base64-encoded public key of the key pair, i.e. the access key configured on FMZ\n    var base64ApiKey = \"xxx\"\n\n    var ts = String(new Date().getTime())\n    var data = \"instruction=subscribe&timestamp=\" + ts + \"&window=5000\"\n\n    // Since signEd25519 returns a base64 encoding, it contains the character \"=\"\n    var signature = signEd25519(data)\n    \n    // The payload may contain the character \"=\" after being encoded by JSON\n    payload = {\n        \"method\": \"SUBSCRIBE\",\n        \"params\": [\"account.orderUpdate\"],\n        \"signature\": [base64ApiKey, signature, ts, \"5000\"]\n    }\n\n    client = Dial(\"wss://ws.backpack.exchange\")\n    client.write(JSON.stringify(payload))\n    if (!client) {\n        Log(\"Connection failed, program exited\")\n        return\n    }\n    \n    while (true) {\n        var buf = client.read()      \n        Log(buf)\n    }    \n}\n\nfunction onexit() {\n    client.close()\n}\n\nfunction signEd25519(data) {\n    return exchange.Encode(\"ed25519.seed\", \"raw\", \"base64\", data, \"base64\", \"{{secretkey}}\")\n}\n```\n\nThe following call in the code works fine:\n```js\nclient = Dial(\"wss://ws.backpack.exchange\")\nclient.write(JSON.stringify(payload))\n```\n\nIf you write it directly in ```payload```, it will not work properly, for example:\n```js\nclient = Dial(\"wss://ws.backpack.exchange|payload=\" + JSON.stringify(payload))\n```\n"
                     }
                 ],
                 "returns": [
@@ -1756,7 +1797,7 @@
                         }
                     },
                     {
-                        "code": "function getLogin(pAccessKey, pSecretKey, pPassphrase) {\n    // Signature function for login\n    var ts = (new Date().getTime() / 1000).toString()\n    var login = {\n        \"op\": \"login\",\n        \"args\":[{\n            \"apiKey\"    : pAccessKey,\n            \"passphrase\" : pPassphrase,\n            \"timestamp\" : ts,\n            \"sign\" : exchange.HMAC(\"sha256\", \"base64\", ts + \"GET\" + \"/users/self/verify\", pSecretKey)\n        }]\n    }    \n    return login\n}                \n\nvar client_private = null \nfunction main() {\n    // Because the read function uses a timeout setting, filtering the timeout reports errors that would otherwise be output with redundant errors\n    SetErrorFilter(\"timeout\")\n    \n    // Position channel subscription information\n    var posSubscribe = {\n        \"op\": \"subscribe\",\n        \"args\": [{\n            \"channel\": \"positions\",\n            \"instType\": \"ANY\"\n        }]\n    }                \n\n    var accessKey = \"xxx\"\n    var secretKey = \"xxx\"\n    var passphrase = \"xxx\"            \n\n    client_private = Dial(\"wss://ws.okx.com:8443/ws/v5/private\")\n    client_private.write(JSON.stringify(getLogin(accessKey, secretKey, passphrase)))\n    Sleep(3000)  // When logging in, you cannot subscribe to private channels immediately, you need to wait for server response\n    client_private.write(JSON.stringify(posSubscribe))\n    if (client_private) {\n        var lastPingTS = new Date().getTime()\n        while (true) {\n            var buf = client_private.read(-1)\n            if (buf) {\n                Log(buf)\n            }\n            \n            // Detect disconnection, reconnect\n            if (buf == \"\" && client_private.write(JSON.stringify(posSubscribe)) == 0) {\n                Log(\"Disconnection detected, close connection, reconnect\")\n                client_private.close()\n                client_private = Dial(\"wss://ws.okx.com:8443/ws/v5/private\")\n                client_private.write(JSON.stringify(getLogin(accessKey, secretKey, passphrase)))\n                Sleep(3000)\n                client_private.write(JSON.stringify(posSubscribe))\n            }\n            \n            // Send heartbeat packets\n            var nowPingTS = new Date().getTime()\n            if (nowPingTS - lastPingTS > 10 * 1000) {\n                client_private.write(\"ping\")\n                lastPingTS = nowPingTS\n            }            \n        }        \n    }\n}                \n\nfunction onexit() {    \n    var ret = client_private.close()\n    Log(\"Close the connection!\", ret)\n}\n",
+                        "code": "function getLogin(pAccessKey, pSecretKey, pPassphrase) {\n    // Signature function for login\n    var ts = (new Date().getTime() / 1000).toString()\n    var login = {\n        \"op\": \"login\",\n        \"args\":[{\n            \"apiKey\"    : pAccessKey,\n            \"passphrase\" : pPassphrase,\n            \"timestamp\" : ts,\n            \"sign\" : exchange.HMAC(\"sha256\", \"base64\", ts + \"GET\" + \"/users/self/verify\", pSecretKey)   // exchange.HMAC has been deprecated and is temporarily supported. Please use the latest exchange.Encode function instead.\n        }]\n    }    \n    return login\n}                \n\nvar client_private = null \nfunction main() {\n    // Because the read function uses a timeout setting, filtering the timeout reports errors that would otherwise be output with redundant errors\n    SetErrorFilter(\"timeout\")\n    \n    // Position channel subscription information\n    var posSubscribe = {\n        \"op\": \"subscribe\",\n        \"args\": [{\n            \"channel\": \"positions\",\n            \"instType\": \"ANY\"\n        }]\n    }                \n\n    var accessKey = \"xxx\"\n    var secretKey = \"xxx\"\n    var passphrase = \"xxx\"            \n\n    client_private = Dial(\"wss://ws.okx.com:8443/ws/v5/private\")\n    client_private.write(JSON.stringify(getLogin(accessKey, secretKey, passphrase)))\n    Sleep(3000)  // When logging in, you cannot subscribe to private channels immediately, you need to wait for server response\n    client_private.write(JSON.stringify(posSubscribe))\n    if (client_private) {\n        var lastPingTS = new Date().getTime()\n        while (true) {\n            var buf = client_private.read(-1)\n            if (buf) {\n                Log(buf)\n            }\n            \n            // Detect disconnection, reconnect\n            if (buf == \"\" && client_private.write(JSON.stringify(posSubscribe)) == 0) {\n                Log(\"Disconnection detected, close connection, reconnect\")\n                client_private.close()\n                client_private = Dial(\"wss://ws.okx.com:8443/ws/v5/private\")\n                client_private.write(JSON.stringify(getLogin(accessKey, secretKey, passphrase)))\n                Sleep(3000)\n                client_private.write(JSON.stringify(posSubscribe))\n            }\n            \n            // Send heartbeat packets\n            var nowPingTS = new Date().getTime()\n            if (nowPingTS - lastPingTS > 10 * 1000) {\n                client_private.write(\"ping\")\n                lastPingTS = nowPingTS\n            }            \n        }        \n    }\n}                \n\nfunction onexit() {    \n    var ret = client_private.close()\n    Log(\"Close the connection!\", ret)\n}\n",
                         "lang": "javascript"
                     },
                     {
@@ -1830,7 +1871,9 @@
                 ],
                 "examples": [
                     {
-                        "info": "An example of accessing the OKX public ticker API interface."
+                        "info": {
+                            "value": "An example of accessing the OKX public ticker API interface.\n"
+                        }
                     },
                     {
                         "code": "function main(){\n    // An example of GET access without parameters\n    var info = JSON.parse(HttpQuery(\"https://www.okx.com/api/v5/public/time\"))\n    Log(info)\n    // An example of GET access with parameters\n    var ticker = JSON.parse(HttpQuery(\"https://www.okx.com/api/v5/market/books?instId=BTC-USDT\"))\n    Log(ticker)\n}\n",
@@ -1845,7 +1888,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "The HttpQuery function uses proxy settings."
+                        "info": {
+                            "value": "The HttpQuery function uses proxy settings.\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    // Setting proxy and sending an http request for this time, no username, no password, this http request will be sent through the proxy\n    HttpQuery(\"socks5://127.0.0.1:8889/http://www.baidu.com/\")            \n\n    // Setting proxy and sending an http request for this time, enter the user name and password, only the current call to HttpQuery takes effect, and then call HttpQuery again (\"http://www.baidu.com\") so that the proxy will not be used.\n    HttpQuery(\"socks5://username:password@127.0.0.1:8889/http://www.baidu.com/\")\n}\n",
@@ -1908,7 +1953,9 @@
                 ],
                 "examples": [
                     {
-                        "info": "Asynchronous access to the exchange's public interface for aggregated ticker data."
+                        "info": {
+                            "value": "Asynchronous access to the exchange's public interface for aggregated ticker data.\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    // Create the first asynchronous thread\n    var r1 = HttpQuery_Go(\"https://www.okx.com/api/v5/market/tickers?instType=SPOT\")\n    // Create the second asynchronous thread\n    var r2 = HttpQuery_Go(\"https://api.huobi.pro/market/tickers\")\n    \n    // Get the return value of the first asynchronous thread call\n    var tickers1 = r1.wait()\n    // Get the return value of the second asynchronous thread call\n    var tickers2 = r2.wait()\n    \n    // Print results\n    Log(\"tickers1:\", tickers1)\n    Log(\"tickers2:\", tickers2)\n}\n",
@@ -1942,7 +1989,7 @@
                     {
                         "name": "algo",
                         "info": {
-                            "value": "The parameter ```algo``` is the algorithm used in the encoding calculation. The support setting is: ```raw``` (no algorithm is used), the\"sign\", \"signTx\", \"md4\", \"md5\", \"sha256\", \"sha512\", \"sha1\", \"keccak256\",  \"sha3.224\", \"sha3.256\", \"sha3.384\", \"sha3.512\", \"sha3.keccak256\", \"sha3.keccak512\", \"sha512.384\",  \"sha512.256\", \"sha512.224\", \"ripemd160\", \"blake2b.256\", \"blake2b.512\", \"blake2s.128\", \"blake2s.256\". The parameter ```algo``` also supports: \"text.encoder.utf8\", \"text.decoder.utf8\", \"text.encoder.gbk\", \"text.decoder.gbk\", encode and decode strings."
+                            "value": "The parameter ```algo``` is the algorithm used in the encoding calculation. The support setting is: ```raw``` (no algorithm is used), the\"sign\", \"signTx\", \"md4\", \"md5\", \"sha256\", \"sha512\", \"sha1\", \"keccak256\",  \"sha3.224\", \"sha3.256\", \"sha3.384\", \"sha3.512\", \"sha3.keccak256\", \"sha3.keccak512\", \"sha512.384\",  \"sha512.256\", \"sha512.224\", \"ripemd160\", \"blake2b.256\", \"blake2b.512\", \"blake2s.128\", \"blake2s.256\". The parameter ```algo``` also supports: \"text.encoder.utf8\", \"text.decoder.utf8\", \"text.encoder.gbk\", \"text.decoder.gbk\", encode and decode strings. The parameter ```algo``` also supports: \"ed25519\" algorithm. Supports the use of different hash algorithms, for example, the parameter ```algo``` can be written as \"ed25519.md5\", \"ed25519.sha512\", etc. It supports ```ed25519.seed``` calculation."
                         },
                         "type": "string",
                         "required": true
@@ -2003,7 +2050,9 @@
                 ],
                 "examples": [
                     {
-                        "info": "Example of Encode function call."
+                        "info": {
+                            "value": "Example of Encode function call.\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    Log(Encode(\"raw\", \"raw\", \"hex\", \"example\", \"raw\", \"123\"))            // 6578616d706c65\n    Log(Encode(\"raw\", \"raw\", \"hex\", \"example\"))                          // 6578616d706c65\n    Log(Encode(\"sha256\", \"raw\", \"hex\", \"example\", \"raw\", \"123\"))         // 698d54f0494528a759f19c8e87a9f99e75a5881b9267ee3926bcf62c992d84ba\n    Log(Encode(\"sha256\", \"raw\", \"hex\", \"example\", \"\", \"123\"))            // 50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c\n    Log(Encode(\"sha256\", \"raw\", \"hex\", \"example\", null, \"123\"))          // 50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c\n    Log(Encode(\"sha256\", \"raw\", \"hex\", \"example\", \"string\", \"123\"))      // 698d54f0494528a759f19c8e87a9f99e75a5881b9267ee3926bcf62c992d84ba\n    \n    Log(Encode(\"raw\", \"raw\", \"hex\", \"123\"))           // 313233\n    Log(Encode(\"raw\", \"raw\", \"base64\", \"123\"))        // MTIz\n    \n    Log(Encode(\"sha256\", \"raw\", \"hex\", \"example\", \"hex\", \"313233\"))      // 698d54f0494528a759f19c8e87a9f99e75a5881b9267ee3926bcf62c992d84ba\n    Log(Encode(\"sha256\", \"raw\", \"hex\", \"example\", \"base64\", \"MTIz\"))     // 698d54f0494528a759f19c8e87a9f99e75a5881b9267ee3926bcf62c992d84ba\n}\n",
@@ -2018,7 +2067,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "The parameter ```algo``` also supports: \"text.encoder.utf8\", \"text.decoder.utf8\", \"text.encoder.gbk\", \"text.decoder.gbk\" to encode and decode strings."
+                        "info": {
+                            "value": "The parameter ```algo``` also supports: \"text.encoder.utf8\", \"text.decoder.utf8\", \"text.encoder.gbk\", \"text.decoder.gbk\" to encode and decode strings.\n"
+                        }
                     },
                     {
                         "code": "function main(){\n    var ret1 = Encode(\"text.encoder.utf8\", \"raw\", \"hex\", \"hello\")     // e4bda0e5a5bd\n    Log(ret1)    \n    var ret2 = Encode(\"text.decoder.utf8\", \"hex\", \"string\", ret1)   \n    Log(ret2)            \n\n    var ret3 = Encode(\"text.encoder.gbk\", \"raw\", \"hex\", \"hello\")      // c4e3bac3\n    Log(ret3)\n    var ret4 = Encode(\"text.decoder.gbk\", \"hex\", \"string\", ret3)\n    Log(ret4)\n}\n",
@@ -2055,7 +2106,9 @@
                 ],
                 "examples": [
                     {
-                        "info": "If you need to get millisecond timestamps, you can use the following code:"
+                        "info": {
+                            "value": "If you need to get millisecond timestamps, you can use the following code:\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    var time = UnixNano() / 1000000\n    Log(_N(time, 0))\n}\n",
@@ -2251,7 +2304,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "Create a table."
+                        "info": {
+                            "value": "Create a table.\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    var strSql = [\n        \"CREATE TABLE TEST_TABLE(\", \n        \"TS INT PRIMARY KEY NOT NULL,\",\n        \"HIGH REAL NOT NULL,\", \n        \"OPEN REAL NOT NULL,\", \n        \"LOW REAL NOT NULL,\", \n        \"CLOSE REAL NOT NULL,\", \n        \"VOLUME REAL NOT NULL)\"\n    ].join(\"\")\n    var ret = DBExec(strSql)\n    Log(ret)\n}\n",
@@ -2266,7 +2321,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "Add, delete, check and change the records in the table."
+                        "info": {
+                            "value": "Add, delete, check and change the records in the table.\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    var strSql = [\n        \"CREATE TABLE TEST_TABLE(\", \n        \"TS INT PRIMARY KEY NOT NULL,\",\n        \"HIGH REAL NOT NULL,\", \n        \"OPEN REAL NOT NULL,\", \n        \"LOW REAL NOT NULL,\", \n        \"CLOSE REAL NOT NULL,\", \n        \"VOLUME REAL NOT NULL)\"\n    ].join(\"\")\n    Log(DBExec(strSql))\n    \n    // Add a piece of data\n    Log(DBExec(\"INSERT INTO TEST_TABLE (TS, HIGH, OPEN, LOW, CLOSE, VOLUME) VALUES (1518970320000, 100, 99.1, 90, 100, 12345.6);\"))\n    \n    // Query data\n    Log(DBExec(\"SELECT * FROM TEST_TABLE;\"))\n    \n    // Modify data\n    Log(DBExec(\"UPDATE TEST_TABLE SET HIGH=? WHERE TS=?\", 110, 1518970320000))    \n    \n    // Delete data\n    Log(DBExec(\"DELETE FROM TEST_TABLE WHERE HIGH=?\", 110))\n}\n",
@@ -2485,7 +2542,9 @@
                 ],
                 "examples": [
                     {
-                        "info": "Get and print the current time string:"
+                        "info": {
+                            "value": "Get and print the current time string:\n"
+                        }
                     },
                     {
                         "code": "function main(){\n    var time = _D()\n    Log(time)\n}\n",
@@ -2500,7 +2559,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "The timestamp is 1574993606000, using the code conversion:"
+                        "info": {
+                            "value": "The timestamp is 1574993606000, using the code conversion:\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    Log(_D(1574993606000))\n}\n",
@@ -2598,7 +2659,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "If you need to change all the N digits to the left of the decimal point to 0, you can write it like this:"
+                        "info": {
+                            "value": "If you need to change all the N digits to the left of the decimal point to 0, you can write it like this:\n"
+                        }
                     },
                     {
                         "code": "function main(){\n    var i = 1300\n    Log(i)\n    var ii = _N(i, -3)\n    // Check the logs and see that it is 1000\n    Log(ii)\n}\n",
@@ -2652,7 +2715,7 @@
                         "value": "The ```_C()``` function will keep calling the specified function until it returns successfully (the function referenced by the parameter ```pfn``` returns **null** or **false** when called will retry calling ```pfn```). For example ```_C(exchange.GetTicker)```. The default retry interval is 3 seconds, you can call the ```_CDelay()``` function to set the retry interval. For example, ```_CDelay(1000)``` means to change the retry interval of the ```_C()``` function to 1 second."
                     },
                     {
-                        "value": "Fault tolerance can be done for, but is not limited to, the following functions:\n- ```exchange.GetTicker()```\n- ```exchange.GetDepth()```\n- ```exchange.GetTrades()```\n- ```exchange.GetRecords()```\n- ```exchange.GetAccount()```\n- ```exchange.GetOrders()```\n- ```exchange.GetOrder()```\n- ```exchange.GetPosition()```\nAll can be called by the ```_C()``` function for fault tolerance. The ```_C()``` function is not limited to the above listed function fault tolerance, the parameter ```pfn``` is a function reference rather than a function call.\nNote that it is ```_C(exchange.GetTicker)```, not ```_C(exchange.GetTicker())```.\n"
+                        "value": "Fault tolerance can be done for, but is not limited to, the following functions:\n- ```exchange.GetTicker()```\n- ```exchange.GetDepth()```\n- ```exchange.GetTrades()```\n- ```exchange.GetRecords()```\n- ```exchange.GetAccount()```\n- ```exchange.GetOrders()```\n- ```exchange.GetOrder()```\n- ```exchange.GetPositions()```\nAll can be called by the ```_C()``` function for fault tolerance. The ```_C()``` function is not limited to the above listed function fault tolerance, the parameter ```pfn``` is a function reference rather than a function call.\nNote that it is ```_C(exchange.GetTicker)```, not ```_C(exchange.GetTicker())```.\n"
                     }
                 ],
                 "returns": [
@@ -2666,7 +2729,7 @@
                 "examples": [
                     {
                         "info": {
-                            "value": "For error-tolerant functions without parameters:"
+                            "value": "For error-tolerant functions without parameters:\n"
                         }
                     },
                     {
@@ -2682,7 +2745,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "For functions with parameters that are error tolerant:"
+                        "info": {
+                            "value": "For functions with parameters that are error tolerant:\n"
+                        }
                     },
                     {
                         "code": "function main(){\n    var records = _C(exchange.GetRecords, PERIOD_D1)\n    Log(records)\n}\n",
@@ -2697,7 +2762,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "It can also be used for fault tolerance of custom functions"
+                        "info": {
+                            "value": "It can also be used for fault tolerance of custom functions:\n"
+                        }
                     },
                     {
                         "code": "var test = function(a, b){\n    var time = new Date().getTime() / 1000\n    if(time % b == 3){\n        Log(\"Eligible!\", \"#FF0000\")\n        return true\n    }\n    Log(\"Retry!\", \"#FF0000\")\n    return false\n}            \n\nfunction main(){\n    var ret = _C(test, 1, 5)\n    Log(ret)\n}\n",
@@ -2853,7 +2920,9 @@
                 ],
                 "examples": [
                     {
-                        "info": "Multiple ```msg``` parameters can be passed:"
+                        "info": {
+                            "value": "Multiple ```msg``` parameters can be passed:\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    Log(\"msg1\", \"msg2\", \"msg3\")\n}\n",
@@ -2868,7 +2937,9 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "It supports setting the color of output message, if we use setting color and push at the same time, we need to set color first and use ```@``` character to set push last."
+                        "info": {
+                            "value": "It supports setting the color of output message, if we use setting color and push at the same time, we need to set color first and use ```@``` character to set push last.\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    Log(\"Hello, FMZ Quant!@\")\n    Sleep(1000 * 5)\n    // Add #ff0000 to the string to print the log in red and push the message\n    Log(\"Hello, #ff0000@\")\n}\n",
@@ -3049,7 +3120,7 @@
                         "value": "The ```LogStatus()``` function supports printing ```base64``` encoded images, starting with ``` ` ``` and ending with ``` ` ```. For example: ```LogStatus(\"`data:image/png;base64,AAAA`\")```."
                     },
                     {
-                        "value": "The ```LogStatus()``` function supports passing ```matplotlib.pyplot``` objects directly into ```Python```.\nAs long as the object contains the ```savefig``` method, it can be passed as a parameter to the ```LogStatus()``` function, for example:            \n```\nimport matplotlib.pyplot as plt \ndef main():\n    plt.plot([3,6,2,4,7,1])\n    LogStatus(plt) \n```\n"
+                        "value": "The ```LogStatus()``` function supports passing ```matplotlib.pyplot``` objects directly into ```Python```, as long as the object contains the ```savefig``` method, it can be passed as a parameter to the ```LogStatus()``` function, for example:            \n\n```python\nimport matplotlib.pyplot as plt \ndef main():\n    plt.plot([3,6,2,4,7,1])\n    LogStatus(plt) \n```\n"
                     },
                     {
                         "value": "When the strategy is running live trading, if you go through the history on the live trading page, the status bar will sleep and stop updating. Only the status bar data will be refreshed when the log is on the first page. It supports outputting ```base64``` encoded images in the status bar, and it also supports outputting ```base64``` encoded images in the table displayed in the status bar. Since the string data of the encoded image is generally very long, the sample code is not shown."
@@ -3160,7 +3231,7 @@
                     },
                     {
                         "info": {
-                            "value": "It supports for grouped button controls, functionally consistent with **status bar buttons that support data entry** (set by using the \"input\" field). Interactive commands are ultimately captured by the ```GetCommand()``` function. The difference is that with the ```\"group\"``` field setting, when the button is clicked to trigger the interaction, the dialog that pops up on the page contains a set of **group** of input controls set up to enter a group of data at once. A few points to note about the ```\"group\"``` field in the structure of the status bar button control and the group button control: - The ```type``` property in group supports only the following four types, and the ```defValue``` property is the default value.\n  \"selected\": A dropdown box control that uses the ```|``` symbol to separate each option in a dropdown box as it is set.\n  \"number\": Numeric input box control.\n  \"string\": String input box control.\n  \"boolean\": Checkbox control, checked for (Boolean) true, unchecked for (Boolean) false.\n- Controls on interactive input support dependency settings:\n  For example, in the following example: ```\"name\": \"tradePrice@orderType==1\"``` setting, which makes the **tradePrice** input control available only when the **orderType** drop-down control is selected as a **Pending Order**.\n- Bilingual control name support for interactive inputs\n  For example, in the following example: \"description\": \"\u4e0b\u5355\u65b9\u5f0f|order type\" setting, use ```|``` symbols to separate the content of the description in Chinese and English.\n- ```name```, ```description``` in group and ```name```, ```description``` in the button structure do not have the same definitions even though they have the same field names.\n  The definition of ```name``` in group is also different from the definition of ```name``` in input.\n- When the group button control is triggered, the interaction content is sent in the format of the button's cmd field value and the group field's associated data, such as the output of the ```Log(\"cmd:\", cmd)``` statement in the following example test:\n  ```cmd: open:{\"orderType\":1,\"tradePrice\":99,\"orderAmount\":\"99\",\"boolean\":true}```, i.e., what is returned by the ```GetCommand()``` function when an interaction occurs: ```open:{\"orderType\":1,\"tradePrice\":99,\"orderAmount\":\"99\",\"boolean\":true}```.\n- The ```type``` property of the button control supports only: ```\"button\"```.\n  Button controls that support input data, i.e. controls that have the ```input``` property set, the ```type``` property is only supported if it is set to: ```\"number\"```.\nRefer to the following examples:"
+                            "value": "It supports for grouped button controls, functionally consistent with **status bar buttons that support data entry** (set by using the \"input\" field). Interactive commands are ultimately captured by the ```GetCommand()``` function. The difference is that with the ```\"group\"``` field setting, when the button is clicked to trigger the interaction, the dialog that pops up on the page contains a set of **group** of input controls set up to enter a group of data at once.\nA few points to note about the ```\"group\"``` field in the structure of the status bar button control and the group button control:\n- The ```type``` property in group supports only the following four types, and the ```defValue``` property is the default value.\n  \"selected\": A dropdown box control that uses the ```|``` symbol to separate each option in a dropdown box as it is set.\n  \"number\": Numeric input box control.\n  \"string\": String input box control.\n  \"boolean\": Checkbox control, checked for (Boolean) true, unchecked for (Boolean) false.\n- Controls on interactive input support dependency settings:\n  For example, in the following example: ```\"name\": \"tradePrice@orderType==1\"``` setting, which makes the **tradePrice** input control available only when the **orderType** drop-down control is selected as a **Pending Order**.\n- Bilingual control name support for interactive inputs\n  For example, in the following example: \"description\": \"\u4e0b\u5355\u65b9\u5f0f|order type\" setting, use ```|``` symbols to separate the content of the description in Chinese and English.\n- ```name```, ```description``` in group and ```name```, ```description``` in the button structure do not have the same definitions even though they have the same field names.\n  The definition of ```name``` in group is also different from the definition of ```name``` in input.\n- When the group button control is triggered, the interaction content is sent in the format of the button's cmd field value and the group field's associated data, such as the output of the ```Log(\"cmd:\", cmd)``` statement in the following example test:\n  ```cmd: open:{\"orderType\":1,\"tradePrice\":99,\"orderAmount\":\"99\",\"boolean\":true}```, i.e., what is returned by the ```GetCommand()``` function when an interaction occurs: ```open:{\"orderType\":1,\"tradePrice\":99,\"orderAmount\":\"99\",\"boolean\":true}```.\n- The ```type``` property of the button control supports only: ```\"button\"```.\n  Button controls that support input data, i.e. controls that have the ```input``` property set, the ```type``` property is only supported if it is set to: ```\"number\"```.\nRefer to the following examples:\n"
                         }
                     },
                     {
@@ -3173,6 +3244,23 @@
                     },
                     {
                         "code": "void main() {\n    json tbl = R\"({\n        \"type\": \"table\", \n        \"title\": \"Demonstrate grouping button control\", \n        \"cols\": [\"operation\"],\n        \"rows\": []\n    })\"_json;\n\n    json groupBtn = R\"({\n        \"type\": \"button\", \n        \"name\": \"open positions\", \n        \"cmd\": \"open\", \n        \"group\": [\n            {\"name\": \"orderType\", \"description\": \"\u4e0b\u5355\u65b9\u5f0f|order type\", \"type\": \"selected\", \"defValue\": \"market order|pending order\"},\n            {\"name\": \"tradePrice@orderType==1\", \"description\": \"\u4ea4\u6613\u4ef7\u683c|trade price\", \"type\": \"number\", \"defValue\": 100},\n            {\"name\": \"orderAmount\", \"description\": \"\u59d4\u6258\u6570\u91cf|order amount\", \"type\": \"string\", \"defValue\": 100},\n            {\"name\": \"boolean\", \"description\": \"yes/no|boolean\", \"type\": \"boolean\", \"defValue\": true}\n    ]})\"_json;\n\n    json testBtn1 = R\"({\"type\": \"button\", \"name\": \"button1\", \"cmd\": \"button1\", \"description\": \"This is the first button.\"})\"_json;\n    json testBtn2 = R\"({\"type\": \"button\", \"name\": \"button2\", \"cmd\": \"button2\", \"description\": \"This is the second button.\", \"input\": {\"name\": \"number of positions opened\", \"type\": \"number\", \"defValue\": 1}})\"_json;\n    \n    tbl[\"rows\"].push_back({groupBtn});\n    tbl[\"rows\"].push_back({{testBtn1, testBtn2}});\n    \n    while(true) {\n        LogStatus(\"`\" + tbl.dump() + \"`\", \"\\n\", \"The grouping button control can also be set directly on the status bar in addition to being set on the status bar form:\", \"`\" + groupBtn.dump() + \"`\");\n        auto cmd = GetCommand();\n        if(cmd != \"\") {\n            Log(\"cmd:\", cmd);\n        }\n        Sleep(5000);\n    }\n}\n",
+                        "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "The following example demonstrates how to design a dropdown box control that contains multiple choices when the status bar group button control (implemented by setting the ```group``` field) and the status bar button control (implemented by setting the ```input``` field) are clicked to trigger an interaction:"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    // Status bar button control (set input field implementation) testBtn1 button triggered by the page in the drop-down box control using the options field to set options, using the defValue field to set the default options. This is different from the other examples in this chapter, which use defValue to set the options directly.\n    var testBtn1 = {\n        type: \"button\",\n        name: \"testBtn1\",\n        cmd: \"cmdTestBtn1\",\n        input: {name: \"testBtn1ComboBox\", type: \"selected\", options: [\"A\", \"B\"], defValue: 1}\n    }\n\n    /* \n      Status bar button control (set input field implementation) testBtn2 button triggered by the page in the drop-down box control using the options field to set the options, options field in the options field not only supports the string,\n      the use of the ```{text: \"description\", value: \"value\"}``` structure is also supported. Use the defValue field to set the default option, which can be multiple choice (multiple choice via array structure). Multiple choice requires setting the additional field multiple to a true value.\n    */\n    var testBtn2 = {\n        type: \"button\", \n        name: \"testBtn2\",\n        cmd: \"cmdTestBtn2\",\n        input: {\n            name: \"testBtn2MultiComboBox\", \n            type: \"selected\", \n            description: \"Implementing dropdown box multi-selection\", \n            options: [{text: \"Option A\", value: \"A\"}, {text: \"Option B\", value: \"B\"}, {text: \"Option C\", value: \"C\"}],\n            defValue: [\"A\", \"C\"],\n            multiple: true\n        }\n    }\n\n    // Status bar grouping button control (set group field implementation) testBtn3 button triggered by the page in the drop-down box control using the options field to set options, also supports the direct use of defValue set options.\n    var testBtn3 = {\n        type: \"button\",                     \n        name: \"testBtn3\",\n        cmd: \"cmdTestBtn3\", \n        group: [\n            {name: \"comboBox1\", label: \"labelComboBox1\", description: \"Dropdown box 1\", type: \"selected\", defValue: 1, options: [\"A\", \"B\"]}, \n            {name: \"comboBox2\", label: \"labelComboBox2\", description: \"Dropdown box 2\", type: \"selected\", defValue: \"A|B\"}, \n            {name: \"comboBox3\", label: \"labelComboBox3\", description: \"Dropdown box 3\", type: \"selected\", defValue: [0, 2], multiple: true, options: [\"A\", \"B\", \"C\"]}, \n            {\n                name: \"comboBox4\", \n                label: \"labelComboBox4\", \n                description: \"Dropdown box 4\", \n                type: \"selected\", \n                defValue: [\"A\", \"C\"], \n                multiple: true, \n                options: [{text: \"Option A\", value: \"A\"}, {text: \"Option B\", value: \"B\"}, {text: \"Option C\", value: \"C\"}, {text: \"Option D\", value: \"D\"}]\n            }\n        ]\n    }\n    while (true) {\n        LogStatus(\"`\" + JSON.stringify(testBtn1) + \"`\\n\", \"`\" + JSON.stringify(testBtn2) + \"`\\n\", \"`\" + JSON.stringify(testBtn3) + \"`\\n\")\n        var cmd = GetCommand()\n        if (cmd) {\n            Log(cmd)\n        }\n        Sleep(5000)\n    }\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "import json\n\ndef main():\n    testBtn1 = {\n        \"type\": \"button\",\n        \"name\": \"testBtn1\",\n        \"cmd\": \"cmdTestBtn1\",\n        \"input\": {\"name\": \"testBtn1ComboBox\", \"type\": \"selected\", \"options\": [\"A\", \"B\"], \"defValue\": 1}\n    }\n\n    testBtn2 = {\n        \"type\": \"button\", \n        \"name\": \"testBtn2\",\n        \"cmd\": \"cmdTestBtn2\",\n        \"input\": {\n            \"name\": \"testBtn2MultiComboBox\", \n            \"type\": \"selected\", \n            \"description\": \"Implementing dropdown box multi-selection\", \n            \"options\": [{\"text\": \"Option A\", \"value\": \"A\"}, {\"text\": \"Option B\", \"value\": \"B\"}, {\"text\": \"Option C\", \"value\": \"C\"}],\n            \"defValue\": [\"A\", \"C\"],\n            \"multiple\": True\n        }\n    }\n\n    testBtn3 = {\n        \"type\": \"button\",                     \n        \"name\": \"testBtn3\",\n        \"cmd\": \"cmdTestBtn3\", \n        \"group\": [\n            {\"name\": \"comboBox1\", \"label\": \"labelComboBox1\", \"description\": \"Dropdown box 1\", \"type\": \"selected\", \"defValue\": 1, \"options\": [\"A\", \"B\"]}, \n            {\"name\": \"comboBox2\", \"label\": \"labelComboBox2\", \"description\": \"Dropdown box 2\", \"type\": \"selected\", \"defValue\": \"A|B\"}, \n            {\"name\": \"comboBox3\", \"label\": \"labelComboBox3\", \"description\": \"Dropdown box 3\", \"type\": \"selected\", \"defValue\": [0, 2], \"multiple\": True, \"options\": [\"A\", \"B\", \"C\"]}, \n            {\n                \"name\": \"comboBox4\", \n                \"label\": \"labelComboBox4\", \n                \"description\": \"Dropdown box 4\", \n                \"type\": \"selected\", \n                \"defValue\": [\"A\", \"C\"], \n                \"multiple\": True, \n                \"options\": [{\"text\": \"Option A\", \"value\": \"A\"}, {\"text\": \"Option B\", \"value\": \"B\"}, {\"text\": \"Option C\", \"value\": \"C\"}, {\"text\": \"Option D\", \"value\": \"D\"}]\n            }\n        ]\n    }\n\n    while True:\n        LogStatus(\"`\" + json.dumps(testBtn1) + \"`\\n\", \"`\" + json.dumps(testBtn2) + \"`\\n\", \"`\" + json.dumps(testBtn3) + \"`\\n\")\n        cmd = GetCommand()\n        if cmd:\n            Log(cmd)\n        Sleep(5000)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    json testBtn1 = R\"({\n        \"type\": \"button\",\n        \"name\": \"testBtn1\",\n        \"cmd\": \"cmdTestBtn1\",\n        \"input\": {\"name\": \"testBtn1ComboBox\", \"type\": \"selected\", \"options\": [\"A\", \"B\"], \"defValue\": 1}\n    })\"_json;\n    \n    json testBtn2 = R\"({\n        \"type\": \"button\", \n        \"name\": \"testBtn2\",\n        \"cmd\": \"cmdTestBtn2\",\n        \"input\": {\n            \"name\": \"testBtn2MultiComboBox\", \n            \"type\": \"selected\", \n            \"description\": \"Implementing dropdown box multi-selection\", \n            \"options\": [{\"text\": \"Option A\", \"value\": \"A\"}, {\"text\": \"Option B\", \"value\": \"B\"}, {\"text\": \"Option C\", \"value\": \"C\"}],\n            \"defValue\": [\"A\", \"C\"],\n            \"multiple\": true\n        }\n    })\"_json;\n    \n    json testBtn3 = R\"({\n        \"type\": \"button\",                     \n        \"name\": \"testBtn3\",\n        \"cmd\": \"cmdTestBtn3\", \n        \"group\": [\n            {\"name\": \"comboBox1\", \"label\": \"labelComboBox1\", \"description\": \"Dropdown box 1\", \"type\": \"selected\", \"defValue\": 1, \"options\": [\"A\", \"B\"]}, \n            {\"name\": \"comboBox2\", \"label\": \"labelComboBox2\", \"description\": \"Dropdown box 2\", \"type\": \"selected\", \"defValue\": \"A|B\"}, \n            {\"name\": \"comboBox3\", \"label\": \"labelComboBox3\", \"description\": \"Dropdown box 3\", \"type\": \"selected\", \"defValue\": [0, 2], \"multiple\": true, \"options\": [\"A\", \"B\", \"C\"]}, \n            {\n                \"name\": \"comboBox4\", \n                \"label\": \"labelComboBox4\", \n                \"description\": \"Dropdown box 4\", \n                \"type\": \"selected\", \n                \"defValue\": [\"A\", \"C\"], \n                \"multiple\": true, \n                \"options\": [{\"text\": \"Option A\", \"value\": \"A\"}, {\"text\": \"Option B\", \"value\": \"B\"}, {\"text\": \"Option C\", \"value\": \"C\"}, {\"text\": \"Option D\", \"value\": \"D\"}]\n            }\n        ]\n    })\"_json;\n    \n    while (true) {\n        LogStatus(\"`\" + testBtn1.dump() + \"`\\n\", \"`\" + testBtn2.dump() + \"`\\n\", \"`\" + testBtn3.dump() + \"`\\n\");\n        auto cmd = GetCommand();\n        if (cmd != \"\") {\n            Log(cmd);\n        }\n        Sleep(5000);\n    }\n}\n",
                         "lang": "cpp"
                     },
                     {
@@ -3842,6 +3930,16 @@
                         "value": "Get the {@struct Ticker} structure of the spot or contract corresponding to the currently set trading pair, contract code, i.e. the ticker data. ```GetTicker ()``` function is a member function of the exchange object {@var exchange}, the use of ```exchange``` object member functions (methods) only related to ```exchange```, and it will not be repeated in the document."
                     }
                 ],
+                "args": [
+                    {
+                        "name": "symbol",
+                        "info": {
+                            "value": "The parameter ```symbol``` is used to specify the specific trading pair and contract code corresponding to the requested {@struct Ticker} data. If this parameter is not passed or an empty string ```\"``` is passed, the market data of the currently set trading pair and contract code will be requested by default.\nWhen calling the ```exchange.GetTicker(symbol)``` function, ```exchange``` is the spot exchange object. If you need to request market data with the denominated currency as USDT and the trading currency as BTC, the parameter ```symbol``` is: ```\"BTC_USDT\"```, and the format is the trading pair format defined by the FMZ platform.\nWhen calling the ```exchange.GetTicker(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the market data of BTC's U-standard perpetual contract, the parameter ```symbol``` is: ```\"BTC_USDT.swap\"```, and the format is a combination of the **trading pair** and **contract code** defined by the FMZ platform, separated by the character \".\".\nWhen calling the ```exchange.GetTicker(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the market data of BTC's U-standard option contract, the parameter ```symbol``` is: ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example), the format is the combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\".\n"
+                        },
+                        "type": "string",
+                        "required": false
+                    }
+                ],
                 "remarks": [
                     {
                         "value": "The ```Ticker``` data returned by the ```exchange.GetTicker()``` function in the backtesting system. Where ```High``` and ```Low``` are simulated values, taken from the sell one and buy one of the market at that time. The ```Ticker``` data returned by the ```exchange.GetTicker()``` function in the real market. Where the ```High``` and ```Low``` values are based on the data returned by the encapsulated exchange ```Tick``` interface, which includes the highest and lowest prices within a certain period (usually a 24-hour period)."
@@ -3859,7 +3957,12 @@
                 ],
                 "examples": [
                     {
-                        "code": "function main(){\n    var ticker = exchange.GetTicker()\n    /*\n        The exchange interface may not be accessible due to network reasons (even if the docker program's device can open the exchange website, the API interface may not be accessible).\n        At this point, the ticker is null, and it will cause an error when accessing ticker.High, so when testing this code, make sure that the exchange interface can be accessed.\n    */\n    Log(\"Symbol:\", ticker.Symbol, \"High:\", ticker.High, \"Low:\", ticker.Low, \"Sell:\", ticker.Sell, \"Buy:\", ticker.Buy, \"Last:\", ticker.Last, \"Open:\", ticker.Open, \"Volume:\", ticker.Volume)\n}\n",
+                        "info": {
+                            "value": "For futures exchange objects (i.e., ```exchange``` or ```exchanges[0]```), you need to set the contract code using the ```exchange.SetContractType()``` function before calling the ticker function, which will not be repeated.\n"
+                        }
+                    },
+                    {
+                        "code": "function main(){\n    // If it is a futures exchange object, set the contract code first, e.g. set it as a perpetual contract\n    // exchange.SetContractType(\"swap\")\n\n    var ticker = exchange.GetTicker()\n    /*\n        The exchange interface may not be accessible due to network reasons (even if the docker program's device can open the exchange website, the API interface may not be accessible).\n        At this point, the ticker is null, and it will cause an error when accessing ticker.High, so when testing this code, make sure that the exchange interface can be accessed.\n    */\n    Log(\"Symbol:\", ticker.Symbol, \"High:\", ticker.High, \"Low:\", ticker.Low, \"Sell:\", ticker.Sell, \"Buy:\", ticker.Buy, \"Last:\", ticker.Last, \"Open:\", ticker.Open, \"Volume:\", ticker.Volume)\n}\n",
                         "lang": "javascript"
                     },
                     {
@@ -3869,13 +3972,31 @@
                     {
                         "code": "void main() {\n    auto ticker = exchange.GetTicker();\n    Log(\"Symbol:\", ticker.Symbol, \"High:\", ticker.High, \"Low:\", ticker.Low, \"Sell:\", ticker.Sell, \"Buy:\", ticker.Buy, \"Last:\", ticker.Last, \"Open:\", ticker.Open, \"Volume:\", ticker.Volume);\n}\n",
                         "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "Use the ```symbol``` parameter to request market data for a specific symbol (spot symbol).\n"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    var ticker = exchange.GetTicker(\"BTC_USDT\")\n    Log(ticker)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    ticker = exchange.GetTicker(\"BTC_USDT\")\n    Log(ticker)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto ticker = exchange.GetTicker(\"BTC_USDT\");\n    Log(ticker);\n}\n",
+                        "lang": "cpp"
                     }
                 ],
                 "seeAlso": [
                     "{@fun exchange.GetDepth}, {@fun exchange.GetTrades}, {@fun exchange.GetRecords}, {@fun exchange.GetTickers}"
                 ],
                 "syntax": [
-                    "exchange.GetTicker()"
+                    "exchange.GetTicker()",
+                    "exchange.GetTicker(symbol)"
                 ]
             },
             "exchange.GetDepth": {
@@ -3883,6 +4004,16 @@
                 "desc": [
                     {
                         "value": "Get the {@struct Depth} structure of the spot or contract corresponding to the currently set trading pair, contract code, i.e. order book data."
+                    }
+                ],
+                "args": [
+                    {
+                        "name": "symbol",
+                        "info": {
+                            "value": "The parameter ```symbol``` is used to specify the specific trading pair and contract code corresponding to the requested {@struct Depth} data. If this parameter is not passed or an empty string ```\"``` is passed, the order book data of the currently set trading pair and contract code will be requested by default. When calling the ```exchange.GetDepth(symbol)``` function, ```exchange``` is the spot exchange object. If you need to request to obtain the order book data with the denominated currency as USDT and the transaction currency as BTC, the parameter ```symbol``` is: ```\"BTC_USDT\"```, and the format is the trading pair format defined by the FMZ platform. When calling the ```exchange.GetDepth(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the order book data of BTC's U-standard perpetual contract, the parameter ```symbol``` is: ```\"BTC_USDT.swap\"```, and the format is a combination of the **trading pair** and **contract code** defined by the FMZ platform, separated by the character \".\". When calling the ```exchange.GetDepth(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the order book data of the BTC's U-standard option contract, the parameter ```symbol``` is: ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example), the format is the combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\"."
+                        },
+                        "type": "string",
+                        "required": false
                     }
                 ],
                 "remarks": [
@@ -3902,6 +4033,11 @@
                 ],
                 "examples": [
                     {
+                        "info": {
+                            "value": "Test ```exchange.GetDepth()``` function:\n"
+                        }
+                    },
+                    {
                         "code": "function main(){\n    var depth = exchange.GetDepth()\n    /*\n        The exchange interface may not be accessible due to network reasons (even if the docker program's device can open the exchange website, the API interface may not be accessible).\n        At this point, the depth is null, which will cause an error when accessing depth.Asks[1].Price, so make sure you can access the exchange interface when testing the code.\n    */\n    var price = depth.Asks[1].Price\n    Log(\"Sell 2 price is:\", price)\n}\n",
                         "lang": "javascript"
                     },
@@ -3912,13 +4048,31 @@
                     {
                         "code": "void main() {\n    auto depth = exchange.GetDepth();\n    auto price = depth.Asks[1].Price;\n    Log(\"Sell 2 price is:\", price);\n}\n",
                         "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "When the configured ```exchange``` object is a futures exchange object, use the ```symbol``` parameter to request the order book data of a specific symbol (futures symbol).\n"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    // BTC U-based perpetual contract\n    var depth = exchange.GetDepth(\"BTC_USDT.swap\")\n    Log(depth)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    depth = exchange.GetDepth(\"BTC_USDT.swap\")\n    Log(depth)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto depth = exchange.GetDepth(\"BTC_USDT.swap\");\n    Log(depth);\n}\n",
+                        "lang": "cpp"
                     }
                 ],
                 "seeAlso": [
                     "{@fun exchange.GetTicker}, {@fun exchange.GetTrades}, {@fun exchange.GetRecords}"
                 ],
                 "syntax": [
-                    "exchange.GetDepth()"
+                    "exchange.GetDepth()",
+                    "exchange.GetDepth(symbol)"
                 ]
             },
             "exchange.GetTrades": {
@@ -3926,6 +4080,16 @@
                 "desc": [
                     {
                         "value": "Get the {@struct Trade} structure array of the spot or contract corresponding to the currently set trading pair, contract code, i.e. the market transaction data."
+                    }
+                ],
+                "args": [
+                    {
+                        "name": "symbol",
+                        "info": {
+                            "value": "The parameter ```symbol``` is used to specify the specific trading pair and contract code corresponding to the requested {@struct Trade} array data. If this parameter is not passed or an empty string ```\"\"``` is passed, the latest transaction record data of the currently set trading pair and contract code will be requested by default. When calling the ```exchange.GetTrades(symbol)``` function, ```exchange``` is the spot exchange object. If you need to request to obtain the order book data with the denominated currency as USDT and the trading currency as BTC, the parameter ```symbol``` is: ```\"BTC_USDT\"```, and the format is the trading pair format defined by the FMZ platform. When calling the ```exchange.GetTrades(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the order book data of BTC's U-standard perpetual contract, the parameter ```symbol``` is: ```\"BTC_USDT.swap\"```, and the format is a combination of the **trading pair** and **contract code** defined by the FMZ platform, separated by the character \".\". When calling the ```exchange.GetTrades(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the order book data of BTC's U-standard option contract, the parameter ```symbol``` is: ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example), the format is the combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\"."
+                        },
+                        "type": "string",
+                        "required": false
                     }
                 ],
                 "remarks": [
@@ -3948,6 +4112,11 @@
                 ],
                 "examples": [
                     {
+                        "info": {
+                            "value": "Test the ```exchange.GetTrades()``` function:\n"
+                        }
+                    },
+                    {
                         "code": "function main(){\n    var trades = exchange.GetTrades()\n    /*\n        The exchange interface may not be accessible due to network reasons (even if the docker program's device can open the exchange website, the API interface may not be accessible).\n        At this point, trade is null. When accessing trade[0].Id, it will cause an error. Therefore, when testing this code, ensure that you can access the exchange interface.\n    */\n    Log(\"id:\", trades[0].Id, \"time:\", trades[0].Time, \"Price:\", trades[0].Price, \"Amount:\", trades[0].Amount, \"type:\", trades[0].Type)\n}\n",
                         "lang": "javascript"
                     },
@@ -3958,13 +4127,31 @@
                     {
                         "code": "void main() {\n    auto trades = exchange.GetTrades();\n    Log(\"id:\", trades[0].Id, \"time:\", trades[0].Time, \"Price:\", trades[0].Price, \"Amount:\", trades[0].Amount, \"type:\", trades[0].Type);\n}\n",
                         "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "When the configured ```exchange``` object is a futures exchange object, use the ```symbol``` parameter to request market transaction record data for a specific symbol (futures symbol).\n"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    // BTC's U-based perpetual contract\n    var trades = exchange.GetTrades(\"BTC_USDT.swap\")\n    Log(trades)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    trades = exchange.GetTrades(\"BTC_USDT.swap\")\n    Log(trades)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto trades = exchange.GetTrades(\"BTC_USDT.swap\");\n    Log(trades);\n}\n",
+                        "lang": "cpp"
                     }
                 ],
                 "seeAlso": [
                     "{@fun exchange.GetTicker}, {@fun exchange.GetDepth}, {@fun exchange.GetRecords}"
                 ],
                 "syntax": [
-                    "exchange.GetTrades()"
+                    "exchange.GetTrades()",
+                    "exchange.GetTrades(symbol)"
                 ]
             },
             "exchange.GetRecords": {
@@ -3976,9 +4163,25 @@
                 ],
                 "args": [
                     {
+                        "name": "symbol",
+                        "info": {
+                            "value": "The parameter ```symbol``` is used to specify the specific trading pair and contract code corresponding to the requested {@struct Record} array data. If this parameter is not passed or an empty string ```\"``` is passed, the K-line data of the currently set trading pair and contract code will be requested by default. When calling the ```exchange.GetRecords(symbol)``` function, ```exchange``` is the spot exchange object. If you need to request to obtain the order book data with the denominated currency as USDT and the transaction currency as BTC, the parameter ```symbol``` is: ```\"BTC_USDT\"```, and the format is the trading pair format defined by the FMZ platform. When calling the ```exchange.GetRecords(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the order book data of BTC's U-standard perpetual contract, the parameter ```symbol``` is: ```\"BTC_USDT.swap\"```, and the format is a combination of the **trading pair** and **contract code** defined by the FMZ platform, separated by the character \".\". When calling the ```exchange.GetRecords(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the order book data of BTC's U-standard option contract, the parameter ```symbol``` is: ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example), the format is the combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\"."
+                        },
+                        "type": "string",
+                        "required": false
+                    },
+                    {
                         "name": "period",
                         "info": {
-                            "value": "The parameter ```period``` specifies the period of the requested K-line data, for example: {@var PERIOD_M1}, {@var PERIOD_M5}, {@var PERIOD_M15}, etc. The value of parameter ```period``` can be passed not only the defined standard period, but also integer values in seconds."
+                            "value": "The parameter ```period``` specifies the period of the requested K-line data, for example: {@var PERIOD_M1}, {@var PERIOD_M5}, {@var PERIOD_M15}, etc. The value of parameter ```period``` can be passed not only the defined standard period, but also integer values in seconds. If this parameter is not passed or -1 is passed, the period of the K-line data requested by default is the default K-line period of the current strategy real-time/backtest configuration."
+                        },
+                        "type": "number",
+                        "required": false
+                    },
+                    {
+                        "name": "limit",
+                        "info": {
+                            "value": "The parameter ```limit``` is used to specify the length of the requested K-line data. If this parameter is not passed or is 0, the default request length is the maximum number of K-line bars requested at a time of the exchange K-line interface. This parameter may cause paging to query the exchange K-line data, and the time consumption of the function call will increase during paging query."
                         },
                         "type": "number",
                         "required": false
@@ -3992,6 +4195,9 @@
                         "value": "The return value is an array of ```Record``` structures, the returned K-line data will be accumulated over time, the upper limit of the accumulated K-line bars is affected by the ```exchange.SetMaxBarLen()``` function setting. The default limit is 5000 bars when it's not set. When the K-line data reaches the K-line bar accumulation limit, it will be updated by adding a K-line bar and deleting the earliest K-line bar (e.g. queue in/out). Some exchanges do not provide a K-line interface, so the docker collects market transaction record data (```Trade``` structured array) in real time to generate K-lines."
                     },
                     {
+                        "value": "If the exchange's K-line interface supports paging queries, multiple API requests will be made when calling the ```exchange.SetMaxBarLen()``` function to set a larger K-line length."
+                    },
+                    {
                         "value": "When the ```exchange.GetRecords()``` function is called initially, the number of K-line bars obtained differs between backtesting and real trading: - The backtesting system will obtain a certain number of K-line bars before the start of the backtesting time range in advance (the default is 5000, the settings of the backtesting system and the amount of data will affect the final number returned), as the initial K-line data. - The number of K-line bars obtained during the actual trading is based on the maximum amount of data that can be obtained from the K-line interface of the exchange."
                     },
                     {
@@ -4001,7 +4207,7 @@
                         "value": "The simulated level backtesting in the backtesting system requires the setting of the underlying K-line period (when the backtesting system simulates level backtesting, the corresponding K-line data is used to generate Tick data according to the set underlying K-line period). It should be noted that the period of the K-line data obtained in the strategy should not be smaller than the underlying K-line period. Because in the simulation level backtesting, the K-line data of each period in the backtesting system is synthesized from the K-line data of the underlying K-line period."
                     },
                     {
-                        "value": "The ```C++``` language has the following code example if you need to construct your own K-line data:\n```\n#include <sstream>\nvoid main() { \n    Records r;\n    r.Valid = true;\n    for (auto i = 0; i < 10; i++) {\n        Record ele;\n        ele.Time = i * 100000;\n        ele.High = i * 10000;\n        ele.Low = i * 1000;\n        ele.Close = i * 100;\n        ele.Open = i * 10;\n        ele.Volume = i * 1;\n        r.push_back(ele);\n    }\n    // Output display: Records[10]\n    Log(r);                      \n    auto ma = TA.MA(r,10);       \n    // Output display: [nan,nan,nan,nan,nan,nan,nan,nan,nan,450]\n    Log(ma);                     \n}\n```\n"
+                        "value": "The ```C++``` language has the following code example if you need to construct your own K-line data:\n\n```\n#include <sstream>\nvoid main() { \n    Records r;\n    r.Valid = true;\n    for (auto i = 0; i < 10; i++) {\n        Record ele;\n        ele.Time = i * 100000;\n        ele.High = i * 10000;\n        ele.Low = i * 1000;\n        ele.Close = i * 100;\n        ele.Open = i * 10;\n        ele.Volume = i * 1;\n        r.push_back(ele);\n    }\n    // Output display: Records[10]\n    Log(r);                      \n    auto ma = TA.MA(r,10);       \n    // Output display: [nan,nan,nan,nan,nan,nan,nan,nan,nan,450]\n    Log(ma);                     \n}\n```\n"
                     }
                 ],
                 "returns": [
@@ -4016,7 +4222,9 @@
                 ],
                 "examples": [
                     {
-                        "info": "Get K-line data for a custom period"
+                        "info": {
+                            "value": "Get K-line data for a custom period.\n"
+                        }
                     },
                     {
                         "code": "function main() {\n    // Print K-line data with a K-line period of 120 seconds (2 minutes)\n    Log(exchange.GetRecords(60 * 2))         \n    // Print K-line data with a K-line period of 5 minutes\n    Log(exchange.GetRecords(PERIOD_M5))      \n}\n",
@@ -4031,10 +4239,12 @@
                         "lang": "cpp"
                     },
                     {
-                        "info": "Output K-line bar data:"
+                        "info": {
+                            "value": "Output K-line bar data:\n"
+                        }
                     },
                     {
-                        "code": "function main(){\n    var records = exchange.GetRecords(PERIOD_H1)\n    /*\n        The exchange interface may not be accessible due to network reasons (even if the docker program's device can open the exchange website, the API interface may not be accessible).\n        At this point, records is null. When accessing records[0].Time, it will cause an error. Therefore, when testing this code, ensure that you can access the exchange interface.\n    */\n    Log(\"The first k-line data is Time:\", records[0].Time, \"Open:\", records[0].Open, \"High:\", records[0].High)\n    Log(\"The second k-line data is Time:\", records[1].Time ,\"Close:\", records[1].Close)\n    Log(\"Current K-line (latest)\", records[records.length-1], \"Previous K-line\", records[records.length-2])\n}\n",
+                        "code": "function main() {\n    var records = exchange.GetRecords(PERIOD_H1)\n    /*\n        The exchange interface may not be accessible due to network reasons (even if the docker program's device can open the exchange website, the API interface may not be accessible).\n        At this point, records is null. When accessing records[0].Time, it will cause an error. Therefore, when testing this code, ensure that you can access the exchange interface.\n    */\n    Log(\"The first k-line data is Time:\", records[0].Time, \"Open:\", records[0].Open, \"High:\", records[0].High)\n    Log(\"The second k-line data is Time:\", records[1].Time ,\"Close:\", records[1].Close)\n    Log(\"Current K-line (latest)\", records[records.length-1], \"Previous K-line\", records[records.length-2])\n}\n",
                         "lang": "javascript"
                     },
                     {
@@ -4044,6 +4254,23 @@
                     {
                         "code": "void main() {\n    auto records = exchange.GetRecords(PERIOD_H1);\n    Log(\"The first k-line data is Time:\", records[0].Time, \"Open:\", records[0].Open, \"High:\", records[0].High);\n    Log(\"The second k-line data Time:\", records[1].Time, \"Close:\", records[1].Close);\n    Log(\"Current K-line (latest)\", records[records.size() - 1], \"Previous K-line\", records[records.size() - 2]);\n}\n",
                         "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "When the configured ```exchange``` object is a futures exchange object, use the ```symbol```, ```period```, and ```limit``` parameters to request the K-line data of a specific product (futures product).\n"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    var records = exchange.GetRecords(\"BTC_USDT.swap\", 60, 100)\n    Log(records)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    records = exchange.GetRecords(\"BTC_USDT.swap\", 60, 100)\n    Log(records)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto records = exchange.GetRecords(\"BTC_USDT.swap\", 60, 100);\n    Log(records);\n}\n",
+                        "lang": "cpp"
                     }
                 ],
                 "seeAlso": [
@@ -4051,7 +4278,10 @@
                 ],
                 "syntax": [
                     "exchange.GetRecords()",
-                    "exchange.GetRecords(period)"
+                    "exchange.GetRecords(period)",
+                    "exchange.GetRecords(symbol)",
+                    "exchange.GetRecords(symbol, period)",
+                    "exchange.GetRecords(symbol, period, limit)"
                 ]
             },
             "exchange.GetPeriod": {
@@ -4413,7 +4643,7 @@
                         "value": "The ```exchange.GetMarkets()``` function returns a dictionary with a key named the name of the trade variety, and for spot fixes formatted as a trading pair, for example:\n\n```json\n{\n    \"BTC_USDT\" : {...},  // The key value is the Market structure\n    \"LTC_USDT\" : {...},  \n    ...\n}\n```\n\nFor futures contract exchanges, as there may be multiple contracts for a single variety, e.g. ```BTC_USDT``` trading pairs, there are perpetual contracts, quarterly contracts, and so on. The ```exchange.GetMarkets()``` function returns a dictionary with the key name of the pair combined with the contract code, for example:\n\n```json\n{\n    \"BTC_USDT.swap\" : {...},     // The key value is the Market structure\n    \"BTC_USDT.quarter\" : {...}, \n    \"LTC_USDT.swap\" : {...},\n    ...\n}\n```\n"
                     },
                     {
-                        "value": "- The ```exchange.GetMarkets()``` function only supports live trading.\n- The ```exchange.GetMarkets()``` function returns market information only for the varieties that are traded on line on the exchange.\n"
+                        "value": "- The ```exchange.GetMarkets()``` function only supports live trading.\n- The ```exchange.GetMarkets()``` function returns market information only for the varieties that are traded on line on the exchange.\n- The ```exchange.GetMarkets()``` function does not support options contracts.\n"
                     }
                 ],
                 "returns": [
@@ -4459,7 +4689,7 @@
                 ],
                 "remarks": [
                     {
-                        "value": "- This function requests the exchange to aggregate tickers interface, no need to set up trading pairs, contract code before calling. It only returns the tickers of the online trading varieties on the exchange.\n- The backtesting system does not support this function, and for the time being, it only supports bot calls.\n- Exchange objects that do not provide an aggregated ticker interface do not support this function.             \n"
+                        "value": "- This function requests the exchange to aggregate tickers interface, no need to set up trading pairs, contract code before calling. It only returns the tickers of the online trading varieties on the exchange.\n- The backtesting system does not support this function, and for the time being, it only supports bot calls.\n- Exchange objects that do not provide an aggregated ticker interface do not support this function.             \n- This function does not support option contracts.\n"
                     }
                 ],
                 "returns": [
@@ -4531,14 +4761,17 @@
                         "value": "When placing an order for a futures contract, you must pay attention to whether the trade direction is set correctly, as an error will be reported if the trade direction and the trade function do not match. The order size for cryptocurrency futures contracts is the number of contracts if not specified."
                     },
                     {
-                        "value": "The parameter ```price``` is set to ```-1``` for placing market orders, which requires the exchange's order placement interface to support market orders. When placing market orders for cryptocurrency spot contracts, the parameter ```amount``` is the amount of money in the currency of the order. When placing market orders for cryptocurrency futures contracts, the amount parameter ```amount``` is the number of contracts. There are a few cryptocurrency exchanges that do not support market order interface during live trading."
+                        "value": "The parameter ```price``` is set to ```-1``` for placing market orders, which requires the exchange's order placement interface to support market orders. When placing market orders for cryptocurrency spot contracts, the parameter ```amount``` is the amount of money in the currency of the order. When placing market orders for cryptocurrency futures contracts, the amount parameter ```amount``` is the number of contracts. There are a few cryptocurrency exchanges that do not support market order interface during live trading. The order quantity for market buy orders on some spot exchanges is the number of trading coins. Please refer to the **Special Instructions for Exchanges** in the \"User Guide\" for details."
+                    },
+                    {
+                        "value": "If you are using an older version of the docker, the return value of the order ```Id``` of the ```exchange.Buy()``` function may be different from the return value of the order ```Id``` described in the current document."
                     }
                 ],
                 "returns": [
                     {
-                        "type": "string, number, null value",
+                        "type": "string, null value",
                         "info": {
-                            "value": "A successful order returns the order Id, a failed order returns a null value. Some exchanges' order placement interfaces return numeric order ```Id```, while some exchanges' order placement interfaces return string orders ```Id```."
+                            "value": "A successful order returns the order Id, a failed order returns a null value.\nThe attribute ```Id``` of the order {@struct Order} structure of the FMZ platform consists of the exchange product code and the exchange original order ID, separated by English commas. For example, the attribute ```Id``` format of the spot trading pair ```ETH_USDT``` order of the OKX exchange is: ```ETH-USDT,1547130415509278720```.\nWhen calling the ```exchange.Buy()``` function to place an order, the return value order ```Id``` is consistent with the ```Id``` attribute of the order {@struct Order} structure.\n"
                         }
                     }
                 ],
@@ -4638,13 +4871,16 @@
                     },
                     {
                         "value": "The parameter ```price``` is set to ```-1``` for placing market orders, which requires the exchange's order placement interface to support market orders. When placing market orders for cryptocurrency spot contracts, the amount parameter ```amount``` is the amount in trading currency. When placing market orders for cryptocurrency futures contracts, the amount parameter ```amount``` is the number of contracts. There are a few cryptocurrency exchanges that do not support market order interface during live trading."
+                    },
+                    {
+                        "value": "If you are using an older version of the docker, the return value of the order ```Id``` of the ```exchange.Sell()``` function may be different from the return value of the order ```Id``` described in the current document."
                     }
                 ],
                 "returns": [
                     {
-                        "type": "string, number, null value",
+                        "type": "string, null value",
                         "info": {
-                            "value": "A successful order returns the order Id, a failed order returns a null value. Some exchanges' order placement interfaces return numeric order ```Id```, while some exchanges' order placement interfaces return string orders ```Id```."
+                            "value": "A successful order returns the order Id, a failed order returns a null value. The attribute ```Id``` of the order {@struct Order} structure of the FMZ platform consists of the exchange product code and the exchange original order ID, separated by English commas. For example, the attribute ```Id``` format of the spot trading pair ```ETH_USDT``` order of the OKX exchange is: ```ETH-USDT,1547130415509278720```. When calling the ```exchange.Sell()``` function to place an order, the return value order ```Id``` is consistent with the ```Id``` attribute of the order {@struct Order} structure."
                         }
                     }
                 ],
@@ -4705,11 +4941,95 @@
                     "exchange.Sell(price, amount, ...args)"
                 ]
             },
+            "exchange.CreateOrder": {
+                "group": "TradeAPI",
+                "desc": [
+                    {
+                        "value": "The ```exchange.CreateOrder()``` function is used to place an order."
+                    }
+                ],
+                "args": [
+                    {
+                        "name": "symbol",
+                        "info": {
+                            "value": "The parameter ```symbol``` is used to specify the specific trading pair and contract code of the order. If an empty string ```\"\"``` is passed, the order will be placed with the currently set trading pair and contract code by default. When calling the ```exchange.CreateOrder(symbol, side, price, amount)``` function to place an order, ```exchange``` is the spot exchange object. If the order denominated currency is USDT and the tranding currency is BTC, the parameter ```symbol``` is: ```\"BTC_USDT\"```, in the format of the trading pair defined by the FMZ platform. When calling the ```exchange.CreateOrder(symbol, side, price, amount)``` function to place an order, ```exchange``` is the futures exchange object. If the order is a BTC's U-standard perpetual contract order, the parameter ```symbol``` is: ```\"BTC_USDT.swap\"```, and the format is a combination of the **trading pair** and **contract code** defined by the FMZ platform, separated by the character \".\". When calling the ```exchange.CreateOrder(symbol, side, price, amount)``` function to place an order, ```exchange``` is the futures exchange object. If the order is a BTC's U-standard option contract order, the parameter ```symbol``` is: ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example), and the format is a combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\"."
+                        },
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "side",
+                        "info": {
+                            "value": "The ```side``` parameter is used to specify the trading direction of the order.\nFor spot exchange objects, the optional values of the ```side``` parameter are: ```buy```, ```sell```. ```buy``` means buying, and ```sell``` means selling.\nFor futures exchange objects, the optional values of the ```side``` parameter are: ```buy```, ```closebuy```, ```sell```, ```closesell```. ```buy``` means opening a long position, ```closebuy``` means closing a long position, ```sell``` means opening a short position, and ```closesell``` means closing a short position.\n"
+                        },
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "price",
+                        "info": {
+                            "value": "The parameter ```price``` is used to set the price of the order. A price of -1 indicates that the order is a market order."
+                        },
+                        "type": "number",
+                        "required": true
+                    },
+                    {
+                        "name": "amount",
+                        "info": {
+                            "value": "The parameter ```amount``` is used to set the order quantity. Please note that when the order is a market buy order, the order quantity is the purchase amount; the order quantity of the market buy order of some spot exchanges is the number of trading coins. For details, please refer to the **Special Instructions for Exchanges** in the \"User Guide\"."
+                        },
+                        "type": "number",
+                        "required": true
+                    },
+                    {
+                        "name": "arg",
+                        "info": {
+                            "value": "Extended parameters can output additional information to this order log. Multiple ```arg``` parameters can be passed."
+                        },
+                        "type": "Any type supported by the system, such as string, number, bool, object, array, null value, etc.",
+                        "required": false
+                    }
+                ],
+                "returns": [
+                    {
+                        "type": "string, null value",
+                        "info": {
+                            "value": "If the order is successfully placed, the order ID is returned; if the order fails, a null value is returned. The attribute ```Id``` of the order {@struct Order} structure of the FMZ platform consists of the exchange product code and the exchange original order ID, separated by English commas. For example, the attribute ```Id``` format of the order of the spot trading pair ```ETH_USDT``` of the OKX exchange is: ```ETH-USDT,1547130415509278720```. When calling the ```exchange.CreateOrder(symbol, side, price, amount)``` function to place an order, the return value of the order ```Id``` is consistent with the ```Id``` property of the order {@struct Order} structure."
+                        }
+                    }
+                ],
+                "examples": [
+                    {
+                        "info": {
+                            "value": "Spot exchange objects and futures exchange objects call the ```exchange.CreateOrder()``` function to place an order.\n"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    var id = exchange.CreateOrder(\"BTC_USDT\", \"buy\", 60000, 0.01)           // Spot exchange objects place orders for currency-to-currency transactions BTC_USDT trading pairs\n    // var id = exchange.CreateOrder(\"BTC_USDT.swap\", \"buy\", 60000, 0.01)   // Futures exchange objects place orders for BTC's U-standard perpetual contracts\n    Log(\"Order Id:\", id)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    id = exchange.CreateOrder(\"BTC_USDT\", \"buy\", 60000, 0.01)          # Spot exchange objects place orders for currency-to-currency transactions BTC_USDT trading pairs\n    # id = exchange.CreateOrder(\"BTC_USDT.swap\", \"buy\", 60000, 0.01)   # Futures exchange objects place orders for BTC's U-standard perpetual contracts\n    Log(\"Order Id:\", id)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto id = exchange.CreateOrder(\"BTC_USDT\", \"buy\", 60000, 0.01);           // Spot exchange objects place orders for currency-to-currency transactions BTC_USDT trading pairs\n    // auto id = exchange.CreateOrder(\"BTC_USDT.swap\", \"buy\", 60000, 0.01);   // Futures exchange objects place orders for BTC's U-standard perpetual contracts\n    Log(\"Order Id:\", id);\n}\n",
+                        "lang": "cpp"
+                    }
+                ],
+                "seeAlso": [
+                    "{@fun exchange.Buy}, {@fun exchange.Sell}"
+                ],
+                "syntax": [
+                    "exchange.CreateOrder(symbol, side, price, amount)",
+                    "exchange.CreateOrder(symbol, side, price, amount, ...args)"
+                ]
+            },
             "exchange.CancelOrder": {
                 "group": "TradeAPI",
                 "desc": [
                     {
-                        "value": "The ```exchange.CancelOrder()``` function is used to cancel the order."
+                        "value": "The ```exchange.CancelOrder()``` function is used to cancel the order.\nThe attribute ```Id``` of the order {@struct Order} structure of the FMZ platform consists of the exchange product code and the exchange original order ID, separated by English commas. For example, the attribute ```Id``` format of the order of the spot trading pair ```ETH_USDT``` of the OKX exchange is: ```ETH-USDT,1547130415509278720```.\nThe parameter ```orderId``` passed in when calling the ```exchange.CancelOrder()``` function to cancel an order is consistent with the ```Id``` property of the order {@struct Order} structure.\n"
                     }
                 ],
                 "args": [
@@ -4732,7 +5052,7 @@
                 ],
                 "remarks": [
                     {
-                        "value": "The parameter ```orderId``` is of string type or numeric type, depending on the type returned when the order is placed by each exchange."
+                        "value": "If you are using an older version of the docker, the orderId parameter of the exchange.CancelOrder() function may be different from the orderId described in the current document."
                     }
                 ],
                 "returns": [
@@ -4796,15 +5116,18 @@
                     {
                         "name": "orderId",
                         "info": {
-                            "value": "The ```orderId``` parameter is used to specify the order to be queried."
+                            "value": "The ```orderId``` parameter is used to specify the order to be queried.\nThe attribute ```Id``` of the order {@struct Order} structure of the FMZ platform consists of the exchange product code and the exchange original order ID, separated by English commas. For example, the attribute ```Id``` format of the order of the spot trading pair ```ETH_USDT``` of the OKX exchange is: ```ETH-USDT,1547130415509278720```.\nThe parameter ```orderId``` passed in when calling the ```exchange.GetOrder()``` function to query an order is consistent with the ```Id``` property of the order {@struct Order} structure.\n"
                         },
-                        "type": "number, string",
+                        "type": "string",
                         "required": true
                     }
                 ],
                 "remarks": [
                     {
                         "value": "The ```exchange.GetOrder()``` function is not supported by some exchanges. The ```AvgPrice``` attribute in the {@struct Order} structure of the return value is the average price of the transaction. Some exchanges do not support this field, and if they do not, it is set to 0."
+                    },
+                    {
+                        "value": "If you are using an older version of the docker, the ```orderId``` parameter of the ```exchange.GetOrder()``` function may differ from the ```orderId``` described in the current documentation."
                     }
                 ],
                 "returns": [
@@ -4843,6 +5166,16 @@
                         "value": "The ```exchange.GetOrders()``` function is used to get all outstanding orders for the current trading pair, contract."
                     }
                 ],
+                "args": [
+                    {
+                        "name": "symbol",
+                        "info": {
+                            "value": "The ```symbol``` parameter is used to specify the trading pair and contract code of the order data to be queried. If this parameter is not passed, the order data of the currently set trading pair and contract code will be requested by default; if the parameter is passed as an empty string ```\"```, the order data of all varieties that can be queried by the exchange API interface will be requested.\nWhen calling the ```exchange.GetOrders(symbol)``` function, ```exchange``` is the spot exchange object. If you need to request order data with the denominated currency as USDT and the transaction currency as BTC, the parameter ```symbol``` is: ```\"BTC_USDT\"```, and the format is the trading pair format defined by the FMZ platform.\nWhen calling the ```exchange.GetOrders(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the order data of BTC's U-standard perpetual contract, the parameter ```symbol``` is: ```\"BTC_USDT.swap\"```, and the format is a combination of the **trading pair** and **contract code** defined by the FMZ platform, separated by the character \".\".\nWhen calling the ```exchange.GetOrders(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the market data of BTC's U-standard option contract, the parameter ```symbol``` is: ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example), the format is the combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\".\n"
+                        },
+                        "type": "string",
+                        "required": false
+                    }
+                ],
                 "remarks": [
                     {
                         "value": "When the exchange object ```exchange``` represents an account that has no pending orders (active orders in an unfilled state) in the current trading pair, call the ```exchange.GetOrders()``` function to return the empty array, i.e.: ```[]```."
@@ -4876,7 +5209,7 @@
                     },
                     {
                         "info": {
-                            "value": "The ```exchange.GetOrders()``` function gets the outstanding order information for the currently set trading pair. It should be noted that cryptocurrency futures contracts are distinguished not only by the trading pair but also by the contract code.\nUse the following test code to test and get the outstanding order information:\n```\n[{\"Id\":17116430886,\"Amount\":1,\"Price\":808.4,\"DealAmount\":0,\"AvgPrice\":0,\"Status\":0,\"Type\":1,\"ContractType\":\"quarter\"}]\n```\nIt follows that in cryptocurrency transactions, the orders fetched by ```exchange.GetOrders()``` are only the unfinished orders of the currently set contract.\n"
+                            "value": "The ```exchange.GetOrders()``` function gets the outstanding order information for the currently set trading pair(e.g. BTC_USDT). It should be noted that cryptocurrency futures contracts are distinguished not only by the trading pair but also by the contract code.\nUse the following test code to test and get the outstanding order information:\n```\n[{\"Id\":\"BTC-USDT-240927,17116430886\",\"Symbol\":\"BTC_USDT.quarter\",\"Amount\":1,\"Price\":808.4,\"DealAmount\":0,\"AvgPrice\":0,\"Status\":0,\"Type\":1,\"ContractType\":\"quarter\"}]\n```\nIt follows that in cryptocurrency transactions, the orders fetched by ```exchange.GetOrders()``` are only the unfinished orders of the currently set contract.\n"
                         }
                     },
                     {
@@ -4890,13 +5223,31 @@
                     {
                         "code": "void main() {\n    exchange.SetContractType(\"this_week\");\n    exchange.SetDirection(\"buy\");\n    auto ticker = exchange.GetTicker();\n    Log(ticker);\n    exchange.Buy(ticker.Last - 50, 1);            \n\n    exchange.SetContractType(\"quarter\");\n    exchange.SetDirection(\"sell\");\n    ticker = exchange.GetTicker();\n    Log(ticker);\n    exchange.Sell(ticker.Last + 50, 1);            \n\n    Log(\"orders\", exchange.GetOrders());\n}\n",
                         "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "When calling the ```exchange.GetOrders()``` function, pass in the ```Symbol``` parameter to request order data for a specific trading pair and contract code.\n"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    var orders = exchange.GetOrders(\"BTC_USDT\")           // Examples of spot products\n    // var orders = exchange.GetOrders(\"BTC_USDT.swap\")   // Examples of futures products\n    Log(\"orders:\", orders)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    orders = exchange.GetOrders(\"BTC_USDT\")          # Examples of spot products\n    # orders = exchange.GetOrders(\"BTC_USDT.swap\")   # Examples of futures products\n    Log(\"orders:\", orders)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto orders = exchange.GetOrders(\"BTC_USDT\");           // Examples of spot products\n    // auto orders = exchange.GetOrders(\"BTC_USDT.swap\");   // Examples of futures products\n    Log(\"orders:\", orders);\n}\n",
+                        "lang": "cpp"
                     }
                 ],
                 "seeAlso": [
                     "{@struct Order}, {@fun exchange.GetOrder}, {@fun exchange.GetHistoryOrders}"
                 ],
                 "syntax": [
-                    "exchange.GetOrders()"
+                    "exchange.GetOrders()",
+                    "exchange.GetOrders(symbol)"
                 ]
             },
             "exchange.GetHistoryOrders": {
@@ -4910,7 +5261,7 @@
                     {
                         "name": "symbol",
                         "info": {
-                            "value": "The ```symbol``` parameter is used to specify the trade symbol. In the case of the ```BTC_USDT``` trading pair, for example, when the ```exchange``` is a spot exchange object, the parameter format for ```symbol``` is ```BTC_USDT```; if it's a futures exchange object, taking perpetual contract as an example, the parameter format for ```symbol``` is: ```BTC_USDT.swap```."
+                            "value": "The ```symbol``` parameter is used to specify the trade symbol. In the case of the ```BTC_USDT``` trading pair, for example, when the ```exchange``` is a spot exchange object, the parameter format for ```symbol``` is ```BTC_USDT```; if it's a futures exchange object, taking perpetual contract as an example, the parameter format for ```symbol``` is: ```BTC_USDT.swap```.\nIf you are querying the order data of option contracts, set the parameter ```symbol``` to ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example). The format is a combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\".\nIf this parameter is not passed or an empty string ```\"``` is passed, the order data of the currently set trading pair and contract code will be requested by default.\n"
                         },
                         "type": "string",
                         "required": false
@@ -5090,19 +5441,16 @@
                 ],
                 "remarks": [
                     {
-                        "value": "**For cryptocurrency-centric exchanges other API interface calls that are not uniformly encapsulated, with parameter ```k``` set to ```\"api\"```:**\n\n```\n\nexchange.IO(\"api\", httpMethod, resource, params, raw)\n\n```\n\n- httpMethod : The parameter is a string type, fill in the request type ```POST```, ```GET```, etc.\n- resource : The parameter is of string type and fills in the request path.\n- params : The parameter is a string type, filled with request parameters, encoded with ```URL```.\n- raw : The parameter is the raw string parameter and can be left out.\n\nThe ```exchange.IO(\"api\", httpMethod, resource, params, raw)``` function call will access the exchange interface and return null if the call fails and an error occurs.\nOnly the real trading supports calling the ```exchange.IO(\"api\", httpMethod, resource, params, raw)``` function.\n"
+                        "value": "**I. For cryptocurrency-centric exchanges other API interface calls that are not uniformly encapsulated, with parameter ```k``` set to ```\"api\"```:**\n\n```javascript\nexchange.IO(\"api\", httpMethod, resource, params, raw)\n```\n\n- httpMethod : The parameter is a string type, fill in the request type ```POST```, ```GET```, etc.\n- resource : The parameter is of string type and fills in the request path; It supports the use of complete request paths, see the reference example for details.\n- params : The parameter is a string type, filled with request parameters, encoded with ```URL```.\n- raw : The parameter is the raw string parameter and can be left out.\n\nThe ```exchange.IO(\"api\", httpMethod, resource, params, raw)``` function call will access the exchange interface and return null if the call fails and an error occurs.\nOnly the real trading supports calling the ```exchange.IO(\"api\", httpMethod, resource, params, raw)``` function.\n"
                     },
                     {
-                        "value": "**For switching trading pairs, the parameter ```k``` is set to ```\"currency\"```:**\n\n```\n\nexchange.IO(\"currency\", currency)\n\n```\n\n- currency : The parameter is a string type with a uniform upper case format, using an underscore to separate ```baseCurrency``` from ```quoteCurrency```, such as ```BTC_USDT```.\n\n1. Backtesting system now supports switching trading pairs (only for digital currency spot exchange objects), when backtesting, you need to pay attention that you can only switch to trading pairs with the same denominated currency, for example, the current trading pair is ```ETH_BTC``` can only switch to ```LTC_BTC```, not to ```LTC_USDT```.\n2. For cryptocurrency futures contracts the exchange object switches trading pairs and the contract code needs to be set again to determine which contract is to be traded.\n3. Using the {@fun exchange.SetCurrency} function to switch trading pairs is exactly the same as using ```exchange.IO(\"currency\", currency)``` to switch trading pairs.\n"
+                        "value": "**II. For switching trading pairs, the parameter ```k``` is set to ```\"currency\"```:**\n\n```javascript\nexchange.IO(\"currency\", currency)\n```\n\n- currency : The parameter is a string type with a uniform upper case format, using an underscore to separate ```baseCurrency``` from ```quoteCurrency```, such as ```BTC_USDT```.\n\n  1. Backtesting system now supports switching trading pairs (only for digital currency spot exchange objects), when backtesting, you need to pay attention that you can only switch to trading pairs with the same denominated currency, for example, the current trading pair is ```ETH_BTC``` can only switch to ```LTC_BTC```, not to ```LTC_USDT```.\n  2. For cryptocurrency futures contracts the exchange object switches trading pairs and the contract code needs to be set again to determine which contract is to be traded.\n  3. Using the {@fun exchange.SetCurrency} function to switch trading pairs is exactly the same as using ```exchange.IO(\"currency\", currency)``` to switch trading pairs.\n"
                     },
                     {
-                        "value": "**Used to switch the default API interface base address (rest protocol) of the exchange object, with the parameter ```k``` set to ```\"base\"```:**\n\n```\n\nexchange.IO(\"base\", base)\n\n```\n\n- base : This parameter is of string type and is used to set the API base address, such as ```https://api.xxx.xxx```.\n\n1. Using the {@fun exchange.SetBase} function to switch the base address is exactly the same as using ```exchange.IO(\"base\", base)``` to switch the base address.\n"
+                        "value": "**III. Used to switch the cryptocurrency spot exchange object leveraged account mode:**\n- The parameter ```k``` is set to ```\"trade_margin\"``` to switch to the spot leverage account mode. Placing orders and obtaining account assets will access the exchange's spot leveraged interface.\n  If the exchange distinguishes between full margin and isolated margin in spot leverage, use: ```exchange.IO(\"trade_super_margin\")``` to switch to full margin for leveraged account, and ```exchange.IO(\"trade_margin\")``` to switch to isolated margin for leveraged account.\n- Parameter ```k``` is set to ```\"trade_normal\"``` to switch back to normal spot account mode.\n\nSpot exchanges that support switching between leveraged account models:\n|Exchanges|Special remarks|\n|-|-|\n|OKX|Trading pairs in leveraged account mode are different from normal ones, some trading pairs may not have them. Use ```exchange.IO(\"trade_super_margin\")``` to switch to full position for leveraged accounts and use ```exchange.IO(\"trade_margin\")``` to switch to position by position. Use ```trade_normal``` to switch to normal spot mode. Use ```exchange.IO(\"tdMode\", \"cross\")``` to directly specify the leverage mode.|\n|Huobi|Leveraged account mode trading pairs are different from normal ones, some trading pairs may not have them. There are full positions and position-by-position in Huobi leveraged accounts. Use ```trade_margin``` to switch to leverage account position by position, use ```trade_super_margin``` to switch to leverage account full position. Use ```trade_normal``` to switch to normal currency-currency mode.|\n|Binance|Leveraged account mode is divided into position by position and full position, use ```trade_margin``` to switch to position by position, use ```trade_super_margin``` to switch to full position, use ```trade_normal``` to switch to normal currency-currency mode.|\n|GateIO|Leveraged account mode is divided into position by position and full position, use ```trade_margin``` to switch to position by position, use ```trade_super_margin``` to switch to full position, use ```trade_normal``` to switch to normal currency-currency mode.|\n|AscendEx|Use ```exchange.IO(\"trade_margin\")``` to switch to leverage account mode and ```exchange.IO(\"trade_normal\")``` to switch back to normal account mode.|\n|WOO|Use ```exchange.IO(\"trade_margin\")``` to switch to leverage account mode and ```exchange.IO(\"trade_normal\")``` to switch back to normal account mode.|\n|CoinEx|Use ```exchange.IO(\"trade_margin\")``` to switch to leveraged account mode and ```exchange.IO(\"trade_normal\")``` to switch back to normal account mode.|\n"
                     },
                     {
-                        "value": "**Used to switch the cryptocurrency spot exchange object leveraged account mode:**\n- The parameter ```k``` is set to ```\"trade_margin\"``` to switch to the spot leverage account mode. Placing orders and obtaining account assets will access the exchange's spot leveraged interface.\n- Parameter ```k``` is set to ```\"trade_normal\"``` to switch back to normal spot account mode.\n\nSpot exchanges that support switching between leveraged account models:\n|Exchanges|Special remarks|\n|-|-|\n|OKX|Trading pairs in leveraged account mode are different from normal ones, some trading pairs may not have them. Use ```exchange.IO(\"cross\", true)``` to switch to full position for leveraged accounts and use ```exchange.IO(\"cross\", false)``` to switch to position by position|\n|Huobi|Leveraged account mode trading pairs are different from normal ones, some trading pairs may not have them. There are full positions and position-by-position in Huobi leveraged accounts. Use ```trade_margin``` to switch to leverage account position by position, use ```trade_super_margin``` to switch to leverage account full position. Use ```trade_normal``` to switch to normal currency-currency mode.|\n|ZB|The funds are QC before they can be transferred to the leveraged trading board, and the funds are independent between different trading pairs, i.e. the number of QC coins under the ETH_QC trading pair is not visible in BTC_QC|\n|Binance|Leveraged account mode is divided into position by position and full position, use ```trade_margin``` to switch to position by position, use ```trade_super_margin``` to switch to full position, use ```trade_normal``` to switch to normal currency-currency mode.|\n|GateIO|Leveraged account mode is divided into position by position and full position, use ```trade_margin``` to switch to position by position, use ```trade_super_margin``` to switch to full position, use ```trade_normal``` to switch to normal currency-currency mode.|\n|AscendEx|Use ```exchange.IO(\"trade_margin\")``` to switch to leverage account mode and ```exchange.IO(\"trade_normal\")``` to switch back to normal account mode.|\n|WOO|Use ```exchange.IO(\"trade_margin\")``` to switch to leverage account mode and ```exchange.IO(\"trade_normal\")``` to switch back to normal account mode.|\n|phemex|Use ```exchange.IO(\"trade_margin\")``` to switch to leveraged account mode and ```exchange.IO(\"trade_normal\")``` to switch back to normal account mode.|\n"
-                    },
-                    {
-                        "value": "**V. Other switching functions:**\nCheck out the ```exchange.IO()``` function for [Other switching functions](https://www.fmz.com/user-guide#special-exchange-instructions) in the User Guide.\n"
+                        "value": "**IV. Other switching functions:**\nCheck out the ```exchange.IO()``` function for [Other switching functions](https://www.fmz.com/user-guide#special-exchange-instructions) in the User Guide.\n"
                     }
                 ],
                 "returns": [
@@ -5116,7 +5464,7 @@
                 "examples": [
                     {
                         "info": {
-                            "value": "Using the ```exchange.IO(\"api\", httpMethod, resource, params, raw)``` call form of the ```exchange.IO()``` function, it is necessary to understand the API interface of the exchange and check the relevant documentation first. This will allow you to extend the functionality that is not added to the FMZ platform. Submitting a ```POST``` request does not require you to worry about encrypting, signing, or verifying the parameters, which are already handled by FMZ at the bottom, as long as you fill in the corresponding parameters. You can refer to the bulk order example of **OKX Exchange** and use the parameters ```raw``` to pass the order parameters:"
+                            "value": "Using the ```exchange.IO(\"api\", httpMethod, resource, params, raw)``` call form of the ```exchange.IO()``` function, it is necessary to understand the API interface of the exchange and check the relevant documentation first. This will allow you to extend the functionality that is not added to the FMZ platform. Submitting a ```POST``` request does not require you to worry about encrypting, signing, or verifying the parameters, which are already handled by FMZ at the bottom, as long as you fill in the corresponding parameters. You can refer to the batch order example of **OKX Exchange** futures contracts, and use the parameter ```raw``` to pass the order parameters:"
                         }
                     },
                     {
@@ -5146,6 +5494,23 @@
                     },
                     {
                         "code": "void main() {\n    auto amount = 1.0;\n    auto price = 10.0;\n    auto basecurrency = \"ltc\";\n    string message = format(\"symbol=%s&amount=\\\"%.1f\\\"&price=\\\"%.1f\\\"&side=buy&type=limit\", basecurrency, amount, price);\n    auto id = exchange.IO(\"api\", \"POST\", \"/v1/order/new\", message);\n}\n",
+                        "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "xxx"
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    var ret = exchange.IO(\"api\", \"GET\", \"https://www.okx.com/api/v5/account/max-withdrawal\", \"ccy=BTC\")\n    Log(ret)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    ret = exchange.IO(\"api\", \"GET\", \"https://www.okx.com/api/v5/account/max-withdrawal\", \"ccy=BTC\")\n    Log(ret)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto ret = exchange.IO(\"api\", \"GET\", \"https://www.okx.com/api/v5/account/max-withdrawal\", \"ccy=BTC\");\n    Log(ret);\n}\n",
                         "lang": "cpp"
                     },
                     {
@@ -5201,19 +5566,19 @@
                     },
                     {
                         "info": {
-                            "value": "For exchanges with different base addresses for the ticker interface and trading interface, for example, ZB Exchange and Bitfinex Futures have two addresses, one for the ticker interface and the other for the trading interface, the following code is used to switch the base address. ZB switches the private interface base address using ```exchange.IO(\"base\", \"xxx\")```. ZB switches the public interface base address using ```exchange.IO(\"public_base\", \"xxx\")```. Bitfinex futures switch private interface base address using ```exchange.IO(\"base\", \"xxx\")```. Bitfinex futures switch public interface base address using ```exchange.IO(\"mbase\", \"xxx\")```. Take the ZB exchange as an example, the following code is used to switch the base address:"
+                            "value": "For exchanges with different base addresses for the ticker interface and trading interface, for example, Bitfinex Futures have two addresses, one for the ticker interface and the other for the trading interface. Bitfinex futures switch private interface base address using ```exchange.SetBase(\"xxx\")```. Bitfinex futures switch public interface base address using ```exchange.IO(\"mbase\", \"xxx\")```."
                         }
                     },
                     {
-                        "code": "function main() {\n    exchange.IO(\"base\", \"https://trade.zb.plus\")\n    exchange.IO(\"public_base\", \"http://api.zb.plus\")\n    // Print account information\n    Log(exchange.GetAccount())                                            \n}\n",
+                        "code": "function main() {\n    exchange.SetBase(\"https://api.bitfinex.com\")\n    exchange.IO(\"mbase\", \"https://api-pub.bitfinex.com\")\n}\n",
                         "lang": "javascript"
                     },
                     {
-                        "code": "def main():\n    exchange.IO(\"base\", \"https://trade.zb.plus\")\n    exchange.IO(\"public_base\", \"http://api.zb.plus\")\n    Log(exchange.GetAccount())\n",
+                        "code": "def main():\n    exchange.SetBase(\"https://api.bitfinex.com\")\n    exchange.IO(\"mbase\", \"https://api-pub.bitfinex.com\")\n",
                         "lang": "python"
                     },
                     {
-                        "code": "void main() {\n    exchange.IO(\"base\", \"https://trade.zb.plus\");\n    exchange.IO(\"public_base\", \"http://api.zb.plus\");\n    Log(exchange.GetAccount());\n}\n",
+                        "code": "void main() {\n    exchange.SetBase(\"https://api.bitfinex.com\");\n    exchange.IO(\"mbase\", \"https://api-pub.bitfinex.com\");\n}\n",
                         "lang": "cpp"
                     }
                 ],
@@ -5297,26 +5662,34 @@
                     "exchange.Log(orderType, price, amount, ...args)"
                 ]
             },
-            "exchange.HMAC": {
+            "exchange.Encode": {
                 "group": "TradeAPI",
                 "desc": [
                     {
-                        "value": "The ```exchange.HMAC()``` function is used for signature encryption calculations."
+                        "value": "The ```exchange.Encode()``` function is used for signature encryption calculations."
                     }
                 ],
                 "args": [
                     {
                         "name": "algo",
                         "info": {
-                            "value": "The ```algo``` parameter is used to specify the hash algorithm, which supports ```\"md5\"```/```\"sha256\"```/```\"sha512\"```/```\"sha1\"```."
+                            "value": "The parameter ```algo``` is the algorithm used for encoding calculation. Supported settings are: \"raw\" (no algorithm used), \"sign\", \"signTx\", \"md4\", \"md5\", \"sha256\", \"sha512\", \"sha1\", \"keccak256\",  \"sha3.224\", \"sha3.256\", \"sha3.384\", \"sha3.512\", \"sha3.keccak256\", \"sha3.keccak512\", \"sha512.384\",  \"sha512.256\", \"sha512.224\", \"ripemd160\", \"blake2b.256\", \"blake2b.512\", \"blake2s.128\", \"blake2s.256\". The parameter ```algo``` also supports: \"text.encoder.utf8\", \"text.decoder.utf8\", \"text.encoder.gbk\", \"text.decoder.gbk\", for encoding and decoding strings. The parameter ```algo``` also supports: \"ed25519\" algorithm. It supports the use of different hash algorithms, for example, the parameter ```algo``` can be written as \"ed25519.md5\", \"ed25519.sha512\", etc. Supports ```ed25519.seed``` calculation."
                         },
                         "type": "string",
                         "required": true
                     },
                     {
-                        "name": "outputAlgo",
+                        "name": "inputFormat",
                         "info": {
-                            "value": "The ```outputAlgo``` parameter is used to specify the encoding method of the calculation result, supporting ```\"hex\"```/```\"base64\"```."
+                            "value": "Used to specify the data format of the ```data``` parameter. The ```inputFormat``` parameter can be set to one of: \"raw\", \"hex\", \"base64\", and \"string\". \"raw\" means the data is raw data, \"hex\" means the data is ```hex``` encoded, \"base64\" means the data is ```base64``` encoded, and \"string\" means the data is a string."
+                        },
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "outputFormat",
+                        "info": {
+                            "value": "Used to specify the output data format. The ```outputFormat``` parameter supports the following settings: \"raw\", \"hex\", \"base64\", \"string\". \"raw\" means the data is raw data, \"hex\" means the data is ```hex``` encoded, \"base64\" means the data is ```base64``` encoded, and \"string\" means the data is a string."
                         },
                         "type": "string",
                         "required": true
@@ -5324,10 +5697,18 @@
                     {
                         "name": "data",
                         "info": {
-                            "value": "The ```data``` parameter is used to specify the data to be signed."
+                            "value": "The parameter ```data``` is the data to be processed."
                         },
                         "type": "string",
                         "required": true
+                    },
+                    {
+                        "name": "keyFormat",
+                        "info": {
+                            "value": "Used to specify the data format of the ```key``` parameter. The ```key``` parameter can be set to one of: \"raw\", \"hex\", \"base64\", and \"string\". \"raw\" means the data is raw data, \"hex\" means the data is ```hex``` encoded, \"base64\" means the data is ```base64``` encoded, and \"string\" means the data is a string."
+                        },
+                        "type": "string",
+                        "required": false
                     },
                     {
                         "name": "key",
@@ -5335,19 +5716,19 @@
                             "value": "The ```key``` parameter is used to specify the key used in the signature calculation, and it can be used as a plaintext string. You can also use ```\"{{accesskey}}\"```, ```\"{{secretkey}}\"``` to refer to the ```accessKey``` and ```secretKey``` configured in the {@var exchange} exchange object."
                         },
                         "type": "string",
-                        "required": true
+                        "required": false
                     }
                 ],
                 "remarks": [
                     {
-                        "value": "Only the real trading supports calling the ```exchange.HMAC()``` function. The ```\"{{accesskey}}\"```, ```\"{{secretkey}}\"``` references are only valid when the ```exchange.HMAC()``` function is used."
+                        "value": "Only the real trading supports calling the ```exchange.Encode()``` function. The ```\"{{accesskey}}\"```, ```\"{{secretkey}}\"``` references are only valid when the ```exchange.Encode()``` function is used."
                     }
                 ],
                 "returns": [
                     {
                         "type": "string",
                         "info": {
-                            "value": "The ```exchange.HMAC()``` function returns the calculated ```HMAC``` hash value."
+                            "value": "The ```exchange.Encode()``` function returns the calculated hash value encoding."
                         }
                     }
                 ],
@@ -5358,23 +5739,24 @@
                         }
                     },
                     {
-                        "code": "function main() {\n    var APIKEY = \"your Access Key(Bitmex API ID)\"\n    var expires = parseInt(Date.now() / 1000) + 10\n    var signature = exchange.HMAC(\"sha256\", \"hex\", \"GET/realtime\" + expires, \"{{secretkey}}\")\n    var client = Dial(\"wss://www.bitmex.com/realtime\", 60)\n    var auth = JSON.stringify({args: [APIKEY, expires, signature], op: \"authKeyExpires\"})\n    var pos = 0\n    client.write(auth)\n    client.write('{\"op\": \"subscribe\", \"args\": \"position\"}')\n    while (true) {\n        bitmexData = client.read()\n        if(bitmexData.table == 'position' && pos != parseInt(bitmexData.data[0].currentQty)){\n            Log('position change', pos, parseInt(bitmexData.data[0].currentQty), '@')\n            pos = parseInt(bitmexData.data[0].currentQty)\n        }\n    }\n}\n",
+                        "code": "function main() {\n    var APIKEY = \"your Access Key(Bitmex API ID)\"\n    var expires = parseInt(Date.now() / 1000) + 10\n    var signature = exchange.Encode(\"sha256\", \"string\", \"hex\", \"GET/realtime\" + expires, \"hex\", \"{{secretkey}}\")\n    var client = Dial(\"wss://www.bitmex.com/realtime\", 60)\n    var auth = JSON.stringify({args: [APIKEY, expires, signature], op: \"authKeyExpires\"})\n    var pos = 0\n    client.write(auth)\n    client.write('{\"op\": \"subscribe\", \"args\": \"position\"}')\n    while (true) {\n        bitmexData = client.read()\n        if(bitmexData.table == 'position' && pos != parseInt(bitmexData.data[0].currentQty)){\n            Log('position change', pos, parseInt(bitmexData.data[0].currentQty), '@')\n            pos = parseInt(bitmexData.data[0].currentQty)\n        }\n    }\n}\n",
                         "lang": "javascript"
                     },
                     {
-                        "code": "import time\ndef main():\n    APIKEY = \"your Access Key(Bitmex API ID)\"\n    expires = int(time.time() + 10)\n    signature = exchange.HMAC(\"sha256\", \"hex\", \"GET/realtime\" + str(expires), \"{{secretkey}}\")\n    client = Dial(\"wss://www.bitmex.com/realtime\", 60)\n    auth = json.dumps({\"args\": [APIKEY, expires, signature], \"op\": \"authKeyExpires\"})\n    pos = 0\n    client.write(auth)\n    client.write('{\"op\": \"subscribe\", \"args\": \"position\"}')\n    while True:\n        bitmexData = json.loads(client.read())\n        if \"table\" in bitmexData and bitmexData[\"table\"] == \"position\" and len(bitmexData[\"data\"]) != 0 and pos != bitmexData[\"data\"][0][\"currentQty\"]:   \n            Log(\"position change\", pos, bitmexData[\"data\"][0][\"currentQty\"], \"@\")\n            pos = bitmexData[\"data\"][0][\"currentQty\"]\n",
+                        "code": "import time\ndef main():\n    APIKEY = \"your Access Key(Bitmex API ID)\"\n    expires = int(time.time() + 10)\n    signature = exchange.Encode(\"sha256\", \"string\", \"hex\", \"GET/realtime\" + expires, \"hex\", \"{{secretkey}}\")\n    client = Dial(\"wss://www.bitmex.com/realtime\", 60)\n    auth = json.dumps({\"args\": [APIKEY, expires, signature], \"op\": \"authKeyExpires\"})\n    pos = 0\n    client.write(auth)\n    client.write('{\"op\": \"subscribe\", \"args\": \"position\"}')\n    while True:\n        bitmexData = json.loads(client.read())\n        if \"table\" in bitmexData and bitmexData[\"table\"] == \"position\" and len(bitmexData[\"data\"]) != 0 and pos != bitmexData[\"data\"][0][\"currentQty\"]:   \n            Log(\"position change\", pos, bitmexData[\"data\"][0][\"currentQty\"], \"@\")\n            pos = bitmexData[\"data\"][0][\"currentQty\"]\n",
                         "lang": "python"
                     },
                     {
-                        "code": "void main() {\n    auto APIKEY = \"your Access Key(Bitmex API ID)\";\n    auto expires = Unix() + 10;\n    auto signature = exchange.HMAC(\"sha256\", \"hex\", format(\"GET/realtime%d\", expires), \"{{secretkey}}\");\n    \n    auto client = Dial(\"wss://www.bitmex.com/realtime\", 60);\n    json auth = R\"({\"args\": [], \"op\": \"authKeyExpires\"})\"_json;            \n\n    auth[\"args\"].push_back(APIKEY);\n    auth[\"args\"].push_back(expires);\n    auth[\"args\"].push_back(signature);\n    auto pos = 0;\n    client.write(auth.dump());\n    client.write(\"{\\\"op\\\": \\\"subscribe\\\", \\\"args\\\": \\\"position\\\"}\");\n    while(true) {\n        auto bitmexData = json::parse(client.read());\n        if(bitmexData[\"table\"] == \"position\" && bitmexData[\"data\"][0].find(\"currentQty\") != bitmexData[\"data\"][0].end() && pos != bitmexData[\"data\"][0][\"currentQty\"]) {\n            Log(\"test\");\n            Log(\"position change\", pos, bitmexData[\"data\"][0][\"currentQty\"], \"@\");\n            pos = bitmexData[\"data\"][0][\"currentQty\"];\n        }\n    }\n}\n",
+                        "code": "void main() {\n    auto APIKEY = \"your Access Key(Bitmex API ID)\";\n    auto expires = Unix() + 10;\n    auto signature = exchange.Encode(\"sha256\", \"string\", \"hex\", format(\"GET/realtime%d\", expires), \"hex\", \"{{secretkey}}\");\n    \n    auto client = Dial(\"wss://www.bitmex.com/realtime\", 60);\n    json auth = R\"({\"args\": [], \"op\": \"authKeyExpires\"})\"_json;            \n\n    auth[\"args\"].push_back(APIKEY);\n    auth[\"args\"].push_back(expires);\n    auth[\"args\"].push_back(signature);\n    auto pos = 0;\n    client.write(auth.dump());\n    client.write(\"{\\\"op\\\": \\\"subscribe\\\", \\\"args\\\": \\\"position\\\"}\");\n    while(true) {\n        auto bitmexData = json::parse(client.read());\n        if(bitmexData[\"table\"] == \"position\" && bitmexData[\"data\"][0].find(\"currentQty\") != bitmexData[\"data\"][0].end() && pos != bitmexData[\"data\"][0][\"currentQty\"]) {\n            Log(\"test\");\n            Log(\"position change\", pos, bitmexData[\"data\"][0][\"currentQty\"], \"@\");\n            pos = bitmexData[\"data\"][0][\"currentQty\"];\n        }\n    }\n}\n",
                         "lang": "cpp"
                     }
                 ],
                 "seeAlso": [
-                    "{@var exchange}"
+                    "{@var exchange}, {@fun Encode}"
                 ],
                 "syntax": [
-                    "exchange.HMAC(algo, outputAlgo, data, key)"
+                    "exchange.Encode(algo, inputFormat, outputFormat, data)",
+                    "exchange.Encode(algo, inputFormat, outputFormat, data, keyFormat, key)"
                 ]
             },
             "exchange.Go": {
@@ -5416,7 +5798,7 @@
                         "value": "If the return result of the final ```wait()``` function is not obtained, the thread resources will not be released automatically, which will lead to the accumulation of threads requested, and more than 2000 will report an error: ```\"too many routine wait, max is 2000\"```."
                     },
                     {
-                        "value": "Supported functions: ```GetTicker```, ```GetDepth```, ```GetTrades```, ```GetRecords```, ```GetAccount```, ```GetOrders```, ```GetOrder```, ```CancelOrder```, ```Buy```, ```Sell```, ```GetPosition```, ```IO```. All these functions are executed based on the current {@var exchange} exchange object when called concurrently."
+                        "value": "Supported functions: ```GetTicker```, ```GetDepth```, ```GetTrades```, ```GetRecords```, ```GetAccount```, ```GetOrders```, ```GetOrder```, ```CancelOrder```, ```Buy```, ```Sell```, ```GetPositions```, ```IO```. All these functions are executed based on the current {@var exchange} exchange object when called concurrently."
                     },
                     {
                         "value": "The difference between Python language and JavaScript language is that the ```wait()``` function of concurrent objects in Python language returns two parameters. The first parameter is the result returned by an asynchronous API call, and the second parameter indicates whether the asynchronous call is completed.\n\n```\n\ndef main():\n    d = exchange.Go(\"GetRecords\", PERIOD_D1)\n    # ok will return True definitely, unless the strategy is stopped\n    ret, ok = d.wait()          \n    # If the wait times out, or if it waits for an instance that has already ended, ok returns False\n    ret, ok = d.wait(100)  \n\n```\n"
@@ -5488,7 +5870,7 @@
                         }
                     },
                     {
-                        "code": "function main() {\n    /*  \n        Testing with OKX order interface\n        POST /api/v5/trade/order        \n    */\n    \n    var beginTS = new Date().getTime()\n    var param = {\"instId\":\"BTC-USDT-SWAP\",\"tdMode\":\"cross\",\"side\":\"buy\",\"ordType\":\"limit\",\"px\":\"16000\",\"sz\":\"1\",\"posSide\":\"long\"}\n    var ret1 = exchange.Go(\"IO\", \"api\", \"POST\", \"/api/v5/trade/order\", \"\", JSON.stringify(param))\n    var ret2 = exchange.Go(\"IO\", \"api\", \"POST\", \"/api/v5/trade/order\", \"\", JSON.stringify(param))\n    var ret3 = exchange.Go(\"IO\", \"api\", \"POST\", \"/api/v5/trade/order\", \"\", JSON.stringify(param))\n    \n    var id1 = ret1.wait()\n    var id2 = ret2.wait()\n    var id3 = ret3.wait()\n    var endTS = new Date().getTime()                \n\n    Log(\"id1:\", id1)\n    Log(\"id2:\", id2)\n    Log(\"id3:\", id3)\n    Log(\"Concurrent order placement time consumption:\", endTS - beginTS, \"millisecond\")\n}\n",
+                        "code": "function main() {\n    /*  \n        Testing with OKX futures order interface\n        POST /api/v5/trade/order        \n    */\n    \n    var beginTS = new Date().getTime()\n    var param = {\"instId\":\"BTC-USDT-SWAP\",\"tdMode\":\"cross\",\"side\":\"buy\",\"ordType\":\"limit\",\"px\":\"16000\",\"sz\":\"1\",\"posSide\":\"long\"}\n    var ret1 = exchange.Go(\"IO\", \"api\", \"POST\", \"/api/v5/trade/order\", \"\", JSON.stringify(param))\n    var ret2 = exchange.Go(\"IO\", \"api\", \"POST\", \"/api/v5/trade/order\", \"\", JSON.stringify(param))\n    var ret3 = exchange.Go(\"IO\", \"api\", \"POST\", \"/api/v5/trade/order\", \"\", JSON.stringify(param))\n    \n    var id1 = ret1.wait()\n    var id2 = ret2.wait()\n    var id3 = ret3.wait()\n    var endTS = new Date().getTime()                \n\n    Log(\"id1:\", id1)\n    Log(\"id2:\", id2)\n    Log(\"id3:\", id3)\n    Log(\"Concurrent order placement time consumption:\", endTS - beginTS, \"millisecond\")\n}\n",
                         "lang": "javascript"
                     },
                     {
@@ -5521,6 +5903,9 @@
                     },
                     {
                         "value": "If the exchange object is set to a cryptocurrency futures contract exchange, and switched to a currency-based contract, the asset is in currency as margin and is recorded in the ```Stocks```, ```FrozenStocks``` attributes of the {@struct Account} structure."
+                    },
+                    {
+                        "value": "When using the Binance Futures unified account, when calling the ```exchange.GetAccount()``` function to request account information, the encapsulated data is the amount of all assets converted into **USD**. It is displayed in the ```Balance``` field of the {@struct Account} structure. If you need to calculate the conversion amount of other assets, you can use the USD conversion amount divided by the index price (of the asset to be converted) and then divided by the pledge rate (of the asset to be converted) to calculate it."
                     }
                 ],
                 "returns": [
@@ -5810,11 +6195,21 @@
                     "exchange.GetQuoteCurrency()"
                 ]
             },
-            "exchange.GetPosition": {
+            "exchange.GetPositions": {
                 "group": "FuturesAPI",
                 "desc": [
                     {
-                        "value": "The ```exchange.GetPosition()``` function is used to get the position information of the currently set pairs and contracts. The ```GetPosition()``` function is a member function of the exchange object {@var exchange}. The ```GetPosition()``` function gets the position information of the exchange account bound to the exchange object ```exchange```. The purpose of the member functions (methods) of the ```exchange``` object is only related to ```exchange``` and will not be repeated here."
+                        "value": "The ```exchange.GetPositions()``` function is used to get the position information of the currently set pairs and contracts. The ```GetPositions()``` function is a member function of the exchange object {@var exchange}. The ```GetPositions()``` function gets the position information of the exchange account bound to the exchange object ```exchange```. The purpose of the member functions (methods) of the ```exchange``` object is only related to ```exchange``` and will not be repeated here."
+                    }
+                ],
+                "args": [
+                    {
+                        "name": "symbol",
+                        "info": {
+                            "value": "The parameter ```symbol``` is used to specify the trading pair and contract code of the requested position data. If this parameter is not passed, the position data of the currently set trading pair and contract code will be requested by default; if the parameter is passed as an empty string ```\"```, the position data of all varieties that can be queried by the exchange API interface will be requested.\nWhen calling the ```exchange.GetPositions(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the position data of BTC's U-margin perpetual contract, the parameter ```symbol``` is: ```\"BTC_USDT.swap\"```, and the format is a combination of the **trading pair** and **contract code** defined by the FMZ platform, separated by the character \".\".\nWhen calling the ```exchange.GetPositions(symbol)``` function, ```exchange``` is the futures exchange object. If you need to request the position data of the BTC's U-margin option contract, the parameter ```symbol``` is: ```\"BTC_USDT.BTC-240108-40000-C\"``` (taking Binance Option BTC-240108-40000-C as an example), the format is the combination of the **trading pair** defined by the FMZ platform and the specific option contract code defined by the exchange, separated by the character \".\".\n"
+                        },
+                        "type": "string",
+                        "required": false
                     }
                 ],
                 "remarks": [
@@ -5822,31 +6217,56 @@
                         "value": "Cryptocurrency futures contracts are different from cryptocurrency spot, which has only the logical concept of a position. In the system of FMZ Quant Trading platform, cryptocurrency futures contracts are identified by **trading pairs**, **contract code** together. Please refer to {@fun exchange.SetCurrency}, {@fun exchange.SetContractType} functions."
                     },
                     {
-                        "value": "The current {@var exchange} exchange object sets up a trading pair, contract, and if there is no position, the ```exchange.GetPosition()``` function returns an empty array, such as ```[]```."
+                        "value": "The current {@var exchange} exchange object sets up a trading pair, contract, and if there is no position, the ```exchange.GetPositions()``` function returns an empty array, such as ```[]```."
                     },
                     {
-                        "value": "Cryptocurrency futures contracts are generally divided into two types:\n1. Delivery contracts: When the currently set contract is **delivery contract**, calling ```exchange.GetPosition()``` function will return the position information of all delivery contracts under the current trading pair.\n2. Perpetual contracts: When the currently set contract is a **perpetual contract**, calling the ```exchange.GetPosition()``` function returns the position of the perpetual contract under the current trading pair.\n"
+                        "value": "Cryptocurrency futures contracts are generally divided into two types:\n1. Delivery contracts: When the currently set contract is **delivery contract**, calling ```exchange.GetPositions()``` function will return the position information of all delivery contracts under the current trading pair.\n2. Perpetual contracts: When the currently set contract is a **perpetual contract**, calling the ```exchange.GetPositions()``` function returns the position of the perpetual contract under the current trading pair.\n"
+                    },
+                    {
+                        "value": "Compatible with ```exchange.GetPosition()``` call.\n"
                     }
                 ],
                 "returns": [
                     {
                         "type": "{@struct Position} arrays, null values",
                         "info": {
-                            "value": "The ```exchange.GetPosition()``` function returns an array of {@struct Position} structures if the request for data succeeds, and it returns null value if the request for data fails."
+                            "value": "The ```exchange.GetPositions()``` function returns an array of {@struct Position} structures if the request for data succeeds, and it returns null value if the request for data fails."
                         }
                     }
                 ],
                 "examples": [
                     {
-                        "code": "/*\n    Note: If there is no position, an empty array is returned, so use this interface to determine whether the returned data is an empty array before using the data returned.\n    For example:\n    When the exchange is set to OKX futures, if the contract is set to delivery, the data returned is the current week, next week, quarter, next quarter position data, and the data type is an array of position structure.\n    When the exchange is set to OKX Futures, if the contract is set to perpetual, an array with position structure containing position data for perpetual contracts is obtained.\n*/\n\nfunction main(){\n    exchange.SetContractType(\"this_week\")\n    exchange.SetMarginLevel(10)\n    exchange.SetDirection(\"buy\")\n    exchange.Buy(10000, 2)\n    var position = exchange.GetPosition()\n    if(position.length > 0){\n        Log(\"Amount:\", position[0].Amount, \"FrozenAmount:\", position[0].FrozenAmount, \"Price:\",\n            position[0].Price, \"Profit:\", position[0].Profit, \"Type:\", position[0].Type,\n            \"ContractType:\", position[0].ContractType)\n    }\n}\n",
+                        "info": {
+                            "value": "Test the ```exchange.GetPositions()``` function:\n"
+                        }
+                    },
+                    {
+                        "code": "/*\n    Note: If there is no position, an empty array is returned, so use this interface to determine whether the returned data is an empty array before using the data returned.\n    For example:\n    When the exchange is set to OKX futures, if the contract is set to delivery, the data returned is the current week, next week, quarter, next quarter position data, and the data type is an array of position structure.\n    When the exchange is set to OKX Futures, if the contract is set to perpetual, an array with position structure containing position data for perpetual contracts is obtained.\n*/\n\nfunction main(){\n    exchange.SetContractType(\"this_week\")\n    exchange.SetMarginLevel(10)\n    exchange.SetDirection(\"buy\")\n    exchange.Buy(10000, 2)\n    var position = exchange.GetPositions()\n    if(position.length > 0){\n        Log(\"Amount:\", position[0].Amount, \"FrozenAmount:\", position[0].FrozenAmount, \"Price:\",\n            position[0].Price, \"Profit:\", position[0].Profit, \"Type:\", position[0].Type,\n            \"ContractType:\", position[0].ContractType)\n    }\n}\n",
                         "lang": "javascript"
                     },
                     {
-                        "code": "def main():\n    exchange.SetContractType(\"this_week\")\n    exchange.SetMarginLevel(10)\n    exchange.SetDirection(\"buy\")\n    exchange.Buy(10000, 2)\n    position = exchange.GetPosition()\n    if len(position) > 0:\n        Log(\"Amount:\", position[0][\"Amount\"], \"FrozenAmount:\", position[0][\"FrozenAmount\"], \"Price:\", \n            position[0][\"Price\"], \"Profit:\", position[0][\"Profit\"], \"Type:\", position[0][\"Type\"], \n            \"ContractType:\", position[0][\"ContractType\"])\n",
+                        "code": "def main():\n    exchange.SetContractType(\"this_week\")\n    exchange.SetMarginLevel(10)\n    exchange.SetDirection(\"buy\")\n    exchange.Buy(10000, 2)\n    position = exchange.GetPositions()\n    if len(position) > 0:\n        Log(\"Amount:\", position[0][\"Amount\"], \"FrozenAmount:\", position[0][\"FrozenAmount\"], \"Price:\", \n            position[0][\"Price\"], \"Profit:\", position[0][\"Profit\"], \"Type:\", position[0][\"Type\"], \n            \"ContractType:\", position[0][\"ContractType\"])\n",
                         "lang": "python"
                     },
                     {
-                        "code": "void main() {\n    exchange.SetContractType(\"this_week\");\n    exchange.SetMarginLevel(10);\n    exchange.SetDirection(\"buy\");\n    exchange.Buy(10000, 2);\n    auto position = exchange.GetPosition();\n    if(position.size() > 0) {\n        Log(\"Amount:\", position[0].Amount, \"FrozenAmount:\", position[0].FrozenAmount, \"Price:\", \n            position[0].Price, \"Profit:\", position[0].Profit, \"Type:\", position[0].Type, \n            \"ContractType:\", position[0].ContractType);\n    } \n}\n",
+                        "code": "void main() {\n    exchange.SetContractType(\"this_week\");\n    exchange.SetMarginLevel(10);\n    exchange.SetDirection(\"buy\");\n    exchange.Buy(10000, 2);\n    auto position = exchange.GetPositions();\n    if(position.size() > 0) {\n        Log(\"Amount:\", position[0].Amount, \"FrozenAmount:\", position[0].FrozenAmount, \"Price:\", \n            position[0].Price, \"Profit:\", position[0].Profit, \"Type:\", position[0].Type, \n            \"ContractType:\", position[0].ContractType);\n    } \n}\n",
+                        "lang": "cpp"
+                    },
+                    {
+                        "info": {
+                            "value": "Specify the ```symbol``` parameter to request a contract position of a certain symbol or request all positions."
+                        }
+                    },
+                    {
+                        "code": "function main() {\n    var pos = exchange.GetPositions(\"BTC_USDT.swap\")   // Request a single symbol position\n    var allPos = exchange.GetPositions(\"\")             // Request all positions\n    Log(\"pos:\", pos)\n    Log(\"allPos:\", allPos)\n}\n",
+                        "lang": "javascript"
+                    },
+                    {
+                        "code": "def main():\n    pos = exchange.GetPositions(\"BTC_USDT.swap\")\n    allPos = exchange.GetPositions(\"\")\n    Log(\"pos:\", pos)\n    Log(\"allPos:\", allPos)\n",
+                        "lang": "python"
+                    },
+                    {
+                        "code": "void main() {\n    auto pos = exchange.GetPositions(\"BTC_USDT.swap\");\n    auto allPos = exchange.GetPositions(\"\");\n    Log(\"pos:\", pos);\n    Log(\"allPos:\", allPos);\n}\n",
                         "lang": "cpp"
                     }
                 ],
@@ -5854,21 +6274,30 @@
                     "{@struct Position}, {@fun exchange.SetCurrency}, {@fun exchange.SetContractType}, {@var FUTURES_OP_GET_POSITION}"
                 ],
                 "syntax": [
-                    "exchange.GetPosition()"
+                    "exchange.GetPositions()",
+                    "exchange.GetPositions(symbol)"
                 ]
             },
             "exchange.SetMarginLevel": {
                 "group": "FuturesAPI",
                 "desc": [
                     {
-                        "value": "The ```exchange.SetMarginLevel()``` function is used to set the leverage value of the {@var exchange} exchange object's current trading pair and contract."
+                        "value": "The ```exchange.SetMarginLevel()``` function is used to set the leverage value of the trading pair or contract specified by the ```symbol``` parameter. Compatible with only passing in the parameter ```marginLevel``` to set the leverage value of the current trading pair or contract of the {@var exchange} exchange object."
                     }
                 ],
                 "args": [
                     {
-                        "name": "s",
+                        "name": "symbol",
                         "info": {
-                            "value": "The ```s``` parameter is used to set the leverage value, which is usually an integer for exchanges and it also supports floating point leverage value settings for some exchanges."
+                            "value": "The ```symbol``` parameter is used to specify the trading pair or contract for which the leverage value needs to be adjusted. The format of the ```symbol``` parameter of the ```SetMarginLevel()``` function is consistent with the format of the ```symbol``` parameter of the ```GetTicker()``` function."
+                        },
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "marginLevel",
+                        "info": {
+                            "value": "The ```marginLevel``` parameter is used to set the leverage value, which is usually an integer for exchanges and it also supports floating point leverage value settings for some exchanges."
                         },
                         "type": "number",
                         "required": true
@@ -5884,15 +6313,15 @@
                 ],
                 "examples": [
                     {
-                        "code": "function main() {\n    exchange.SetMarginLevel(10)\n}\n",
+                        "code": "function main() {\n    exchange.SetMarginLevel(10)\n    // Set the leverage of BTC\u2019s USDT-margined perpetual contract to 15\n    exchange.SetMarginLevel(\"BTC_USDT.swap\", 15)\n}\n",
                         "lang": "javascript"
                     },
                     {
-                        "code": "def main():\n    exchange.SetMarginLevel(10)\n",
+                        "code": "def main():\n    exchange.SetMarginLevel(10)\n    exchange.SetMarginLevel(\"BTC_USDT.swap\", 15)\n",
                         "lang": "python"
                     },
                     {
-                        "code": "void main() {\n    exchange.SetMarginLevel(10);\n}\n",
+                        "code": "void main() {\n    exchange.SetMarginLevel(10);\n    exchange.SetMarginLevel(\"BTC_USDT.swap\", 15); \n}\n",
                         "lang": "cpp"
                     }
                 ],
@@ -5900,7 +6329,8 @@
                     "{@var exchange}, {@var FUTURES_OP_SET_MARGIN}"
                 ],
                 "syntax": [
-                    "exchange.SetMarginLevel(s)"
+                    "exchange.SetMarginLevel(symbol, marginLevel)",
+                    "exchange.SetMarginLevel(marginLevel)"
                 ]
             },
             "exchange.SetDirection": {
@@ -5968,7 +6398,7 @@
                         "value": "In the cryptocurrency futures contract strategy, take an example of switching to the ```BTC_USDT``` trading pair: When switching trading pairs using the ```exchange.SetCurrency(\"BTC_USDT\")``` or ```exchange.IO(\"currency\", \"BTC_USDT\")``` functions, after switching, you need to use the ```exchange.SetContractType()``` function to reset the contract in order to determine the current contract to be operated under the new trading pair. The system determines whether it is a **currency standard contract** or a **USDT standard contract** based on the trading pair. For example, if a trading pair is set to ```BTC_USDT```, use the ```exchange.SetContractType(\"swap\")``` function to set the contract code to ```swap```. At this point, it is set to ```BTC``` for the **USDT standard** perpetual contract. If the trading pair is ```BTC_USD```, use the ```exchange.SetContractType(\"swap\")``` function to set the contract code to ```swap```. At this point, it is set to ```BTC```'s **currency standard** perpetual contract."
                     },
                     {
-                        "value": "Details of the supported cryptocurrency futures contract exchanges, with contract names for each exchange as follows:\n- Futures_OKCoin (OKX)\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```\n  Set to the contract of this week: ```exchange.SetContractType(\"this_week\")```\n  Set to next week's contract: ```exchange.SetContractType(\"next_week\")```\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```\n- Futures_HuobiDM (Huobi futures)\n  Set to the contract of this week: ```exchange.SetContractType(\"this_week\")```.\n  Set to next week's contract: ```exchange.SetContractType(\"next_week\")```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n  It supports contracts  with ```USDT``` as margin, take ```BTC``` contract as an example: use ```exchange.IO(\"currency\", \"BTC_USDT\")``` to switch to a contract that uses ```USDT``` as margin.\n  Or set the current trading pair to ```BTC_USDT``` directly when configuring live trading parameters and adding exchange objects. After switching trading pairs, you need to call ```exchange.SetContractType()``` function again to set the contract.\n- Futures_BitMEX (BitMEX)\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```. \n  Futures_BitMEX exchange delivery contracts are monthly contracts with the following contract codes (from January to December):\n  ```code\n  \"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"\n  ```\n  Setting up delivery contracts: ```exchange.SetContractType(\"December\")```. For example, when the trading pair is set to ```XBT_USDT```, the ```exchange.SetContractType(\"December\")``` function is called to set the contract for December delivery in the USDT based of BTC (corresponding to the actual contract code of ```XBTUSDTZ23```).\n  \n  Futures_BitMEX Contract Information Summary\n  |Contract code defined by Futures_BitMEX|The corresponding trading pair in FMZ|The corresponding contract code in FMZ|Remark|\n  | - | - | - | - |\n  | DOGEUSD | DOGE_USD | swap | USD denominated, XBT settled. XBT is BTC. |\n  | DOGEUSDT | DOGE_USDT | swap | USDT denominated, USDT settled. |\n  | XBTETH | XBT_ETH | swap | ETH denominated, XBT settled. |\n  | XBTEUR | XBT_EUR | swap | EUR-denominated, XBT settled. |\n  | USDTUSDC | USDT_USDC | swap | USDC denominated, XBT settled. |\n  | ETHUSD_ETH | ETH_USD_ETH | swap | USD denominated, ETH settled. |\n  | XBTH24 | XBT_USD | March | Expiration date: March 24, month code is: H; USD denominated, XBT settled. |\n  | ETHUSDZ23 | ETH_USD | December | Expiration date: Dec 23, month code is: Z; USD denominated, XBT settled. |\n  | XBTUSDTZ23 | XBT_USDT | December | Expiration date: December 23, month code is: Z ; USDT denominated, USDT settled. |\n  | ADAZ23 | ADA_XBT | December | Expiration date: December 23, month code is: Z ; XBT billing, XBT settled. |\n  | P_XBTETFX23 | USDT_XXX | P_XBTETFX23 | Expiration: 11/23/23; denominated as a percentage and settled in USDT. |\n- Futures_GateIO\n  Set to the contract of this week: ```exchange.SetContractType(\"this_week\")```.\n  Set to next week's contract: ```exchange.SetContractType(\"next_week\")```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n  It supports contracts  with ```USDT``` as margin, take ```BTC``` contract as an example: use ```exchange.IO(\"currency\", \"BTC_USDT\")``` to switch to a contract that uses ```USDT``` as margin.\n  Or set the current trading pair to ```BTC_USDT``` directly when configuring live trading parameters and adding exchange objects. After switching trading pairs, you need to call ```exchange.SetContractType()``` function again to set the contract.\n- Futures_Deribit\n  Set to perpetual contracts: ```exchange.SetContractType(\"BTC-PERPETUAL\")```.\n  It supports Deribit's ```USDC``` contract by calling ```exchange.SetContractType(\"ADA_USDC-PERPETUAL\")``` to set the ```USDC``` of ```ADA``` as a perpetual contract for margin.\n  For details on contracts settled at a specific time, please refer to Deribit's official website, for example: ```exchange.SetContractType(\"BTC-27APR18\")```.\n- Futures_KuCoin\n  For example, if the trading pair is set to ```BTC_USD``` and the contract code is set, it is a currency-based contract:\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```.\n  \n  USDT as margin contract:\n  For example, if the trading pair is set to ```BTC_USDT```, and then set the contract code, it is a contract with USDT as margin.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n- Futures_Binance\n  The default for Binance Futures Exchange is: if no contract status set, it needs to set up the contract first.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```, the perpetual contracts of Binance have contracts that use ```USDT``` as margin. For example, ```USDT``` standard perpetual contract of ```BTC``` can be used as a margin contract, and the trading pair is set to ```BTC_USDT```. Binance also supports perpetual contracts that use coins as margin, for example, ```BTC```'s Binance standard perpetual contract, with the trading pair set to ```BTC_USD```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```, the delivery contract has a currency standard contract (i.e., using currencies as margin), for example, ```BTC```'s quarterly contract, the trading pair is set to: ```BTC_USD``` and then set the contract ```exchange.SetContractType(\"quarter\")```, it is set to ```BTC``` quarterly contract with a currency standard contract.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```, for example, ```BTC``` of the currency standard quarterly contract, the trading pair set to: ```BTC_USD```, and then set the contract ```exchange.SetContractType(\"next_quarter\")```.\n  Binance supports partial ```USDT``` as margin delivery contract, take ```BTC``` as an example, set trading pair to ```BTC_USDT```, then set the contract code.\n- Futures_Bibox\n  Contract code for Bibox perpetual contracts: ```swap```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n- Futures_Bybit\n  The default is the perpetual contract for the current trading pair, contract code: ```swap```.\n  Quarterly contract code: ```quarter```.\n  Next quarter contract code: ```next_quarter```.\n- Futures_Kraken\n  The default is not set contract status, you need to set the contract code, contract code:\n  ```swap```: perpetual contract.\n  ```month```: current month contract.\n  ```quarter```: quarterly contract.\n  ```next_quarter```: next quarter contract.\n- Futures_Bitfinex\n  Default is the perpetual contract for the current trading pair, contract code: ```swap```.\n- Futures_Bitget\n  Default is the perpetual contract for the current trading pair, contract code: ```swap```.\n  The trading pair is set to ```BTC_USD``` for currency standard contracts, and the trading pair is set to ```BTC_USDT``` for contracts settled by ```USDT```. Demo contracts can be set up with trading pairs as ```SBTC_USD```, ```BTC_SUSDT```.\n- Futures_dYdX\n  Contract code for dYdX perpetual contracts: ```swap```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```, dYdX has USDT standard contracts only.\n- Futures_MEXC\n  Contract code for MEXC perpetual contracts: ```swap```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\") ```. Set trading pair to ```BTC_USD```, which is currency standard contract, and set trading pair to ```BTC_USDT```, which is ```USDT```-settled contract.\n- Futures_Crypto\n  Tokens in an account on the crypto.com exchange can be converted into USD-denominated credits to be used as margin for contract trading.\n  Set to perpetual contract: ```exchange.SetContractType(\"swap\")```. Example of calling the ```exchange.SetContractType(\"swap\")``` function to set a perpetual contract for BTC when the trading pair is set to ```BTC_USD```.\n  The crypto.com exchange delivery contracts are monthly contracts with the following contract codes (from January to December):\n  ```code\n  \"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"\n  ```\n  Set the delivery contract: ```exchange.SetContractType(\"October\")```. For example, when the trading pair is set to ```BTC_USD```, call the function ```exchange.SetContractType(\"October\")``` to set the October delivery contract for BTC.\n  The corresponding contract code at the current moment is: ```BTCUSD-231027```.\n- Futures_Pionex\n  The Futures_Pionex exchange supports ```USDT``` propriety contracts with a perpetual contract code of ```swap```. For example, when a trading pair is set to ```BTC_USDT```, the ```exchange.SetContractType(\"swap\")``` function is called to set the current contract to be a USDT based perpetual contract for BTC.\n- Futures_WOO\n  Futures_WOO exchange supports ```USDT``` based contracts with a perpetual contract code of ```swap```. For example, when the trading pair is set to ```BTC_USDT```, the function ```exchange.SetContractType(\"swap\")``` is called to set the current contract to be a USDT based perpetual contract for BTC.\n- Futures_Phemex\n  Futures_Phemex exchange supports ```USDT``` based contracts, currency-based contracts, ```USD``` contracts, with a choice of perpetual contract codes: ```swap```, ```u_swap```, ```c_swap```.\n  - The original contract code of the Futures_Phemex exchange with the ```u``` prefix is a ```micro units``` contract, which is named in the FMZ definition: ```u_swap```.\n    For example, the original contract code on the exchange is ```uBTCUSD```, and on FMZ if you need to switch to this contract, you need to set the trading pair to ```BTC_USD```, and then set the contract code ```u_swap```.\n  - Contracts with the ```c``` prefix in the original contract code of the Futures_Phemex exchange.\n    For example, the original contract code on the exchange is ```cETHUSD```, on FMZ if you need to switch to this contract, you need to set the trading pair to ```ETH_USD```, and then set the contract code ```c_swap```.\n"
+                        "value": "Details of the supported cryptocurrency futures contract exchanges, with contract names for each exchange as follows:\n- Futures_OKCoin (OKX)\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```\n  Set to the contract of this week: ```exchange.SetContractType(\"this_week\")```\n  Set to next week's contract: ```exchange.SetContractType(\"next_week\")```\n  Set to monthly contract: ```exchange.SetContractType(\"month\")```\n  Set to next month contract: ```exchange.SetContractType(\"next_month\")```\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```\n- Futures_HuobiDM (Huobi futures)\n  Set to the contract of this week: ```exchange.SetContractType(\"this_week\")```.\n  Set to next week's contract: ```exchange.SetContractType(\"next_week\")```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n  It supports contracts  with ```USDT``` as margin, take ```BTC``` contract as an example: use ```exchange.IO(\"currency\", \"BTC_USDT\")``` to switch to a contract that uses ```USDT``` as margin.\n  Or set the current trading pair to ```BTC_USDT``` directly when configuring live trading parameters and adding exchange objects. After switching trading pairs, you need to call ```exchange.SetContractType()``` function again to set the contract.\n- Futures_BitMEX (BitMEX)\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```. \n  Futures_BitMEX exchange delivery contracts are monthly contracts with the following contract codes (from January to December):\n  ```code\n  \"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"\n  ```\n  Setting up delivery contracts: ```exchange.SetContractType(\"December\")```. For example, when the trading pair is set to ```XBT_USDT```, the ```exchange.SetContractType(\"December\")``` function is called to set the contract for December delivery in the USDT based of BTC (corresponding to the actual contract code of ```XBTUSDTZ23```).\n  \n  Futures_BitMEX Contract Information Summary\n  |Contract code defined by Futures_BitMEX|The corresponding trading pair in FMZ|The corresponding contract code in FMZ|Remark|\n  | - | - | - | - |\n  | DOGEUSD | DOGE_USD | swap | USD denominated, XBT settled. XBT is BTC. |\n  | DOGEUSDT | DOGE_USDT | swap | USDT denominated, USDT settled. |\n  | XBTETH | XBT_ETH | swap | ETH denominated, XBT settled. |\n  | XBTEUR | XBT_EUR | swap | EUR-denominated, XBT settled. |\n  | USDTUSDC | USDT_USDC | swap | USDC denominated, XBT settled. |\n  | ETHUSD_ETH | ETH_USD_ETH | swap | USD denominated, ETH settled. |\n  | XBTH24 | XBT_USD | March | Expiration date: March 24, month code is: H; USD denominated, XBT settled. |\n  | ETHUSDZ23 | ETH_USD | December | Expiration date: Dec 23, month code is: Z; USD denominated, XBT settled. |\n  | XBTUSDTZ23 | XBT_USDT | December | Expiration date: December 23, month code is: Z ; USDT denominated, USDT settled. |\n  | ADAZ23 | ADA_XBT | December | Expiration date: December 23, month code is: Z ; XBT billing, XBT settled. |\n  | P_XBTETFX23 | USDT_XXX | P_XBTETFX23 | Expiration: 11/23/23; denominated as a percentage and settled in USDT. |\n- Futures_GateIO\n  Set to the contract of this week: ```exchange.SetContractType(\"this_week\")```.\n  Set to next week's contract: ```exchange.SetContractType(\"next_week\")```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n  It supports contracts  with ```USDT``` as margin, take ```BTC``` contract as an example: use ```exchange.IO(\"currency\", \"BTC_USDT\")``` to switch to a contract that uses ```USDT``` as margin.\n  Or set the current trading pair to ```BTC_USDT``` directly when configuring live trading parameters and adding exchange objects. After switching trading pairs, you need to call ```exchange.SetContractType()``` function again to set the contract.\n- Futures_Deribit\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n  It supports Deribit's ```USDC``` contract.\n  The delivery contracts are: ```\"this_week\"```, ```\"next_week\"```, ```\"month\"```, ```\"quarter\"```, ```\"next_quarter\"```, ```\"third_quarter\"```, ```\"fourth_quarter\"```.\n  CFD (future_combo): ```\"this_week,swap\"```, ```\"next_week,swap\"```, ```\"next_quarter,this_week\"```, ```\"third_quarter,this_week\"```, ```\"month,next_week\"```, there are many combinations.\n  For option contracts you need to pass in the specific option contract code defined by the exchange, see the Deribit website for details.\n- Futures_KuCoin\n  For example, if the trading pair is set to ```BTC_USD``` and the contract code is set, it is a currency-based contract:\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```.\n  \n  USDT as margin contract:\n  For example, if the trading pair is set to ```BTC_USDT```, and then set the contract code, it is a contract with USDT as margin.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n- Futures_Binance\n  Binance Futures Exchange defaults to the perpetual contract of the current trading pair, contract code: ```swap```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```, the perpetual contracts of Binance have contracts that use ```USDT``` as margin. For example, ```USDT``` standard perpetual contract of ```BTC``` can be used as a margin contract, and the trading pair is set to ```BTC_USDT```. Binance also supports perpetual contracts that use coins as margin, for example, ```BTC```'s Binance standard perpetual contract, with the trading pair set to ```BTC_USD```.\n  Set to quarterly contracts: ```exchange.SetContractType(\"quarter\")```, the delivery contract has a currency standard contract (i.e., using currencies as margin), for example, ```BTC```'s quarterly contract, the trading pair is set to: ```BTC_USD``` and then set the contract ```exchange.SetContractType(\"quarter\")```, it is set to ```BTC``` quarterly contract with a currency standard contract.\n  Set to next quarter contract: ```exchange.SetContractType(\"next_quarter\")```, for example, ```BTC``` of the currency standard quarterly contract, the trading pair set to: ```BTC_USD```, and then set the contract ```exchange.SetContractType(\"next_quarter\")```.\n  Binance supports partial ```USDT``` as margin delivery contract, take ```BTC``` as an example, set trading pair to ```BTC_USDT```, then set the contract code.\n\n  Support for Binance Options contracts:\n  The format of the option contract code is based on the option contract code defined by the exchange: ```BTC-241227-15000-C```, ```XRP-240112-0.5-C```, ```BTC-241227-15000-P```. Take the Binance option contract code ```BTC-241227-15000-P``` as an example: BTC is the option currency code, 241227 is the exercise date, 15000 is the exercise price, P represents a put option, and C represents a call option.\n  For details on the option type, whether it is European option or American option, please refer to the relevant information of the exchange's option contract.\n  The exchange may restrict option sellers and require them to apply for qualifications separately. Binance options require seller qualifications.\n- Futures_Bibox\n  Contract code for Bibox perpetual contracts: ```swap```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```.\n- Futures_Bybit\n  The default is the perpetual contract for the current trading pair, contract code: ```swap```.\n  This week contract code: ```this_week```.\n  Next week contract code: ```next_week```.\n  Third week contract code: ```third_week```.\n  Monthly contract code: ```month```.\n  Next month contract code: ```next_month```.\n  Quarterly contract code: ```quarter```.\n  Next quarter contract code: ```next_quarter```.\n  Third quarter contract code: ```third_quarter```.\n- Futures_Kraken\n  The default is the perpetual contract of the current trading pair, contract code: ```swap```.\n  ```swap```: perpetual contract.\n  ```month```: current month contract.\n  ```quarter```: quarterly contract.\n  ```next_quarter```: next quarter contract.\n  ```swap_pf```: Mixed margin perpetual contract.\n  ```quarter_ff```: Mixed margin quarterly contract.\n  ```month_ff```: Mixed margin current month contract.\n  ```next_quarter_ff```: Mixed margin next quarter contract.\n- Futures_Bitfinex\n  Default is the perpetual contract for the current trading pair, contract code: ```swap```.\n- Futures_Bitget\n  Default is the perpetual contract for the current trading pair, contract code: ```swap```.\n  The trading pair is set to ```BTC_USD``` for currency standard contracts, and the trading pair is set to ```BTC_USDT``` for contracts settled by ```USDT```. Demo contracts can be set up with trading pairs as ```SBTC_USD```, ```BTC_SUSDT```.\n- Futures_dYdX\n  Contract code for dYdX perpetual contracts: ```swap```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\")```, dYdX has USDT standard contracts only.\n- Futures_MEXC\n  Contract code for MEXC perpetual contracts: ```swap```.\n  Set to perpetual contracts: ```exchange.SetContractType(\"swap\") ```. Set trading pair to ```BTC_USD```, which is currency standard contract, and set trading pair to ```BTC_USDT```, which is ```USDT```-settled contract.\n- Futures_Crypto\n  Tokens in an account on the crypto.com exchange can be converted into USD-denominated credits to be used as margin for contract trading.\n  Set to perpetual contract: ```exchange.SetContractType(\"swap\")```. Example of calling the ```exchange.SetContractType(\"swap\")``` function to set a perpetual contract for BTC when the trading pair is set to ```BTC_USD```.\n  The crypto.com exchange delivery contracts are monthly contracts with the following contract codes (from January to December):\n  ```code\n  \"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"\n  ```\n  Set the delivery contract: ```exchange.SetContractType(\"October\")```. For example, when the trading pair is set to ```BTC_USD```, call the function ```exchange.SetContractType(\"October\")``` to set the October delivery contract for BTC.\n  The corresponding contract code at the current moment is: ```BTCUSD-231027```.\n- Futures_Pionex\n  The Futures_Pionex exchange supports ```USDT``` propriety contracts with a perpetual contract code of ```swap```. For example, when a trading pair is set to ```BTC_USDT```, the ```exchange.SetContractType(\"swap\")``` function is called to set the current contract to be a USDT based perpetual contract for BTC.\n- Futures_WOO\n  Futures_WOO exchange supports ```USDT``` based contracts with a perpetual contract code of ```swap```. For example, when the trading pair is set to ```BTC_USDT```, the function ```exchange.SetContractType(\"swap\")``` is called to set the current contract to be a USDT based perpetual contract for BTC.\n- Futures_Phemex\n  Futures_Phemex exchange supports ```USDT``` based contracts, currency-based contracts, ```USD``` contracts, with a choice of perpetual contract codes: ```swap```, ```u_swap```, ```c_swap```.\n  - The original contract code of the Futures_Phemex exchange with the ```u``` prefix is a ```micro units``` contract, which is named in the FMZ definition: ```u_swap```.\n    For example, the original contract code on the exchange is ```uBTCUSD```, and on FMZ if you need to switch to this contract, you need to set the trading pair to ```BTC_USD```, and then set the contract code ```u_swap```.\n  - Contracts with the ```c``` prefix in the original contract code of the Futures_Phemex exchange.\n    For example, the original contract code on the exchange is ```cETHUSD```, on FMZ if you need to switch to this contract, you need to set the trading pair to ```ETH_USD```, and then set the contract code ```c_swap```.\n"
                     }
                 ],
                 "returns": [
@@ -6094,7 +6524,7 @@
                 ],
                 "remarks": [
                     {
-                        "value": "Compatible with the switching method of ```exchange.IO(\"base\", \"https://aws.okx.com\")``` function. Switching the exchange API base address is not supported in the backtesting system, because the backtesting system is a sandbox simulation environment and it does not really access the exchange API interface."
+                        "value": "Switching the exchange API base address is not supported in the backtesting system, because the backtesting system is a sandbox simulation environment and it does not really access the exchange API interface."
                     }
                 ],
                 "examples": [
