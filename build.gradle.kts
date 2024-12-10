@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.fmz"
-version = "0.0.3"
+version = "0.0.4"
 
 repositories {
     mavenCentral()
@@ -19,10 +19,14 @@ dependencies {
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     version.set("2023.2.5")
-    type.set("IU") // Target IDE Platform
+    type.set("IC") // Target IDE Platform
 
     plugins.set(listOf(/* Plugin Dependencies */))
 
+//    IC - IntelliJ IDEA Community Edition
+//    IU - IntelliJ IDEA Ultimate Edition
+//    PY - PyCharm Professional Edition
+//    PC - PyCharm Community Edition
 }
 
 tasks {
@@ -37,7 +41,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("232")
-        untilBuild.set("242.*")
+        untilBuild.set("243.*")
     }
 
     signPlugin {

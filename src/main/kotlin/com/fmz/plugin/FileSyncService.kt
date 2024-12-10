@@ -31,7 +31,8 @@ class FileSyncService(private val project: Project) : Disposable {
         scope.launch {
             try {
                 logger.info("Starting sync for file: $fileName")
-                val uri = URI("https", "www.fmz.${if (token.startsWith('n')) "cn" else "com"}", "/rsync", null)
+                val host = if (token.startsWith('n')) "www.youquant.com" else "www.fmz.com"
+                val uri = URI("https", host, "/rsync", null)
                 val url = uri.toURL()
                 val params = mapOf(
                     "token" to token,
@@ -59,7 +60,7 @@ class FileSyncService(private val project: Project) : Disposable {
                             logger.info("File [$fileName] synced successfully")
                         } else {
                             showNotification("FMZ Sync Error", "Error syncing file [$fileName]: $response", NotificationType.ERROR)
-                            logger.error("Error syncing file [$fileName]: $response")
+                            logger.warn("Error syncing file [$fileName]: $response")
                         }
                     } catch (e: Exception) {
                         showNotification("FMZ Sync Error", "Exception occurred: ${e.message}", NotificationType.ERROR)
@@ -76,6 +77,11 @@ class FileSyncService(private val project: Project) : Disposable {
     }
 
     private fun showNotification(title: String, content: String, type: NotificationType) {
+        if (project.isDisposed) {
+            logger.warn("Project is disposed. Cannot show notification: $title")
+            return
+        }
+
         val notification = Notification("FMZSync", title, content, type)
         project.messageBus.syncPublisher(Notifications.TOPIC).notify(notification)
     }

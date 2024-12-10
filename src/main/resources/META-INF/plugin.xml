@@ -32,17 +32,18 @@
     </description>
     <change-notes>
         <![CDATA[
-    <h2>New Features</h2>
-    <ul>
-     <li>Added support for new functions, further expanding the function library</li>
-     <li>Updated function descriptions and explanations, providing clearer guidance for users</li>
-    </ul>
-    <h2>Bug Fixes</h2>
-    <ul>
-     <li>Fixed the issue where file uploads would occasionally fail, ensuring more reliable file transfer</li>
-     <li>Resolved memory leak problems, improving overall performance and stability</li>
-    </ul>
-    ]]>
+<h2>New Features</h2>
+<ul>
+ <li>Updated plugin version to 0.0.4 and adjusted the target IDE platform type to IC</li>
+ <li>Optimized error log recording method for improved debugging</li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul>
+ <li>Fixed host selection logic in the file synchronization service, enhancing functionality</li>
+ <li>Prevented notifications from appearing when the project has already been released</li>
+</ul>
+]]>
+
     </change-notes>
 
 
@@ -59,4 +60,5 @@
         <psi.referenceContributor language="" implementation="com.fmz.plugin.MyReferenceContributor"/>
         <documentationProvider implementation="com.fmz.plugin.MyDocumentationProvider"/>
     </extensions>
+
 </idea-plugin>
