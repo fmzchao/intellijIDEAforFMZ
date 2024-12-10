@@ -32,15 +32,19 @@
     </description>
     <change-notes>
         <![CDATA[
-<h2>New Features</h2>
+<h3>New Features</h3>
 <ul>
- <li>Updated plugin version to 0.0.4 and adjusted the target IDE platform type to IC</li>
- <li>Optimized error log recording method for improved debugging</li>
+  <li>Added "__Serve" completion suggestions in CompletionUtil.</li>
+  <li>Imported the TextRange class in PsiReferenceProvider.</li>
+  <li>Implemented the getRangeInElement method to return the reference range.</li>
+  <li>Updated the getVariants method to provide code completion suggestions.</li>
+  <li>Optimized error log recording method for improved debugging</li>
 </ul>
-<h2>Bug Fixes</h2>
+<h3>Bug Fixes</h3>
 <ul>
- <li>Fixed host selection logic in the file synchronization service, enhancing functionality</li>
- <li>Prevented notifications from appearing when the project has already been released</li>
+   <li>Modified the resolve method to return the correct resolved elements.</li>
+   <li>Fixed host selection logic in the file synchronization service, enhancing functionality</li>
+   <li>Prevented notifications from appearing when the project has already been released</li>
 </ul>
 ]]>
 

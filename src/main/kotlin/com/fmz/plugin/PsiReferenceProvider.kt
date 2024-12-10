@@ -1,5 +1,6 @@
 package com.fmz.plugin
 
+import com.intellij.openapi.util.TextRange
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTreeUtil
@@ -34,13 +35,19 @@ class MyFunctionReferenceProvider : PsiReferenceProvider() {
 
 internal class MyFunctionReference(element: PsiElement?, private val functionName: String) :
     PsiReferenceBase<PsiElement?>(element!!) {
+
+    override fun getRangeInElement(): TextRange {
+        // 如果你需要改变引用范围，可以在这里实现
+        return TextRange(0, element.textLength)
+    }
+
     override fun resolve(): PsiElement? {
-        // 这里添加你的解析逻辑,比如在项目中搜索函数定义
-        return myElement // 示例返回当前元素
+        // 解析逻辑，返回正确的元素
+        return element
     }
 
     override fun getVariants(): Array<Any> {
-        // 返回代码完成提示,包含多个函数名
-        return emptyArray()
+        // 返回代码补全建议
+        return CompletionUtil.getCompletions().toTypedArray()
     }
 }

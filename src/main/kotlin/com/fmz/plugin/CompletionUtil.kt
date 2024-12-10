@@ -40,6 +40,7 @@ object CompletionUtil {
             "_C",
             "_Cross",
             "JSONParse",
+            "__Serve",
             //LogAPI
             "Log",
             "LogProfit",
@@ -108,6 +109,7 @@ object CompletionUtil {
             "__threadGetData",
             "__threadSetData",
             "__threadId",
+
             //web3
             "BigDecimal",
             "BigFloat",
